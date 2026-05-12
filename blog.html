@@ -1,0 +1,289 @@
+
+<!DOCTYPE html>
+
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TDEE Arabia</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:'Cairo',sans-serif;
+background:#f1f5f9;
+padding:20px;
+}
+
+.container{
+max-width:1450px;
+margin:auto;
+}
+
+.logo{
+font-size:55px;
+font-weight:900;
+color:#2563eb;
+margin-bottom:40px;
+}
+
+.search{
+width:100%;
+padding:22px;
+border:none;
+border-radius:25px;
+font-size:22px;
+margin-bottom:30px;
+box-shadow:0 5px 20px rgba(0,0,0,.05);
+}
+
+.filters{
+display:flex;
+gap:15px;
+flex-wrap:wrap;
+margin-bottom:40px;
+}
+
+.filter-btn{
+border:none;
+padding:14px 28px;
+border-radius:18px;
+font-size:18px;
+font-weight:900;
+cursor:pointer;
+background:#0f172a;
+color:white;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+gap:35px;
+}
+
+.card{
+background:white;
+border-radius:35px;
+overflow:hidden;
+box-shadow:0 10px 30px rgba(0,0,0,.08);
+transition:.3s;
+}
+
+.card:hover{
+transform:translateY(-10px);
+}
+
+.card-image{
+width:100%;
+height:270px;
+object-fit:cover;
+}
+
+.card-content{
+padding:30px;
+}
+
+.card-category{
+display:inline-block;
+background:#2563eb;
+color:white;
+padding:10px 18px;
+border-radius:14px;
+font-weight:900;
+margin-bottom:20px;
+}
+
+.card-title{
+font-size:32px;
+line-height:1.7;
+font-weight:900;
+color:#0f172a;
+margin-bottom:20px;
+}
+
+.card-date{
+color:#64748b;
+font-weight:700;
+margin-bottom:25px;
+}
+
+.read-btn{
+display:block;
+text-align:center;
+background:#0f172a;
+color:white;
+padding:18px;
+border-radius:18px;
+text-decoration:none;
+font-weight:900;
+font-size:20px;
+}
+
+@media(max-width:768px){
+
+.logo{
+font-size:38px;
+}
+
+.card-title{
+font-size:26px;
+}
+
+body{
+padding:12px;
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 class="logo">
+TDEE ARABIA 🔥
+</h1>
+
+<input
+type="text"
+id="searchInput"
+placeholder="ابحث عن مقال..."
+class="search"
+>
+
+<div class="filters">
+
+<button class="filter-btn" onclick="filterPosts('all')">
+الكل
+</button>
+
+<button class="filter-btn" onclick="filterPosts('تنشيف')">
+تنشيف
+</button>
+
+<button class="filter-btn" onclick="filterPosts('تضخيم')">
+تضخيم
+</button>
+
+<button class="filter-btn" onclick="filterPosts('تغذية')">
+تغذية
+</button>
+
+<button class="filter-btn" onclick="filterPosts('تمارين')">
+تمارين
+</button>
+
+</div>
+
+<div class="grid">
+
+
+
+<div
+class="card"
+data-category="تضخيم"
+>
+
+<img
+src="https://images.unsplash.com/photo-1518611012118-696072aa579a"
+class="card-image"
+alt="أفضل تمارين التضخيم 2026"
+>
+
+<div class="card-content">
+
+<div class="card-category">
+تضخيم
+</div>
+
+<h2 class="card-title">
+أفضل تمارين التضخيم 2026
+</h2>
+
+<div class="card-date">
+📅 2026-05-12
+</div>
+
+<a
+href="./أفضل-تمارين-التضخيم-2026.html"
+class="read-btn"
+>
+إقرأ المقال →
+</a>
+
+</div>
+
+</div>
+
+
+
+</div>
+
+</div>
+
+<script>
+
+const searchInput =
+document.getElementById("searchInput")
+
+searchInput.addEventListener("keyup",function(){
+
+const value=this.value.toLowerCase()
+
+document.querySelectorAll(".card")
+.forEach(card=>{
+
+const title=
+card.querySelector(".card-title")
+.innerText
+.toLowerCase()
+
+if(title.includes(value)){
+card.style.display="block"
+}else{
+card.style.display="none"
+}
+
+})
+
+})
+
+function filterPosts(category){
+
+document.querySelectorAll(".card")
+.forEach(card=>{
+
+if(
+category==="all"
+||
+card.dataset.category===category
+){
+card.style.display="block"
+}else{
+card.style.display="none"
+}
+
+})
+
+}
+
+</script>
+
+</body>
+
+</html>
