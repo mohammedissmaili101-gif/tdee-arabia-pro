@@ -1,4 +1,4 @@
-name: Auto Post Generator
+name: Auto Post & Deploy
 on:
   workflow_dispatch:
 jobs:
@@ -23,3 +23,5 @@ jobs:
           git add .
           git commit -m "New Post" || exit 0
           git push
+      - name: Wake up Vercel
+        run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
