@@ -55,6 +55,8 @@ def format_content(text):
 def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
+    
+    # --- التعديل الجوهري هنا (الماركر لازم يكون فيه هاد النص) ---
     marker = ''
     
     new_card = f"""
