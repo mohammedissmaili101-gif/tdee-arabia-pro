@@ -3,7 +3,7 @@ import random
 import datetime
 from groq import Groq
 
-# إعداد العميل باستخدام الساروت من GitHub Secrets
+# إعداد العميل - الساروت من GitHub Secrets
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # مكتبة الصور الرياضية
@@ -50,7 +50,6 @@ def update_blog_list(file_slug, title, img_url):
         </div>
     </div>
     """
-    # إضافة الكارد الجديد في أول القائمة
     marker = 'id="blog-grid">'
     new_content = content.replace(marker, marker + "\n" + new_card)
     with open(blog_file, "w", encoding="utf-8") as f: f.write(new_content)
@@ -61,14 +60,12 @@ def generate():
     img = random.choice(gym_images)
     title = f"أفضل نظام غذائي لل{goal['n']} بوزن {weight} كجم لعام 2026"
     
-    # طلب المقال من الذكاء الاصطناعي - الموديل الجديد
     try:
         res = client.chat.completions.create(
-            messages=[{"role": "user", "content": f"اكتب مقال SEO احترافي وطويل بالعربية عن {title}. استخدم عناوين فرعية، فقرات واضحة، نصائح غذائية، وجدول وجبات مقترح. اجعل الأسلوب تحفيزي ومناسب للرياضيين العرب."}],
+            messages=[{"role": "user", "content": f"اكتب مقال SEO احترافي وطويل بالعربية عن {title}. استخدم عناوين فرعية، فقرات واضحة، نصائح غذائية، وجدول وجبات مقترح."}],
             model="llama-3.3-70b-versatile",
         )
         body = res.choices[0].message.content.replace('\n', '<br>')
-        
         file_slug = f"post-{random.randint(1000,9999)}.html"
 
         template = f"""
@@ -84,17 +81,16 @@ def generate():
                     <div class="text-slate-700 leading-loose text-lg">{body}</div>
                 </div>
             </article>
-            <footer class="text-center p-10 text-slate-400 text-sm">© 2026 TDEE Arabia - كل الحقوق محفوظة</footer>
         </body></html>
         """
         
         with open(file_slug, "w", encoding="utf-8") as f: f.write(template)
         update_blog_list(file_slug, title, img)
         update_sitemap(file_slug)
-        print(f"✅ Successfully generated: {file_slug}")
+        print(f"✅ Success: {file_slug}")
         
     except Exception as e:
-        print(f"❌ Error during generation: {e}")
+        print(f"❌ Error: {e}")
 
 if __name__ == "__main__":
     generate()
