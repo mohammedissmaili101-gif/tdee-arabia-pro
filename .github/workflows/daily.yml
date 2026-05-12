@@ -1,6 +1,9 @@
 name: Auto Post & Deploy
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: '0 */8 * * *' # يعمل كل 8 ساعات (3 مرات يومياً)
+  workflow_dispatch: # للتشغيل اليدوي أيضاً
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,16 +15,19 @@ jobs:
         with:
           python-version: '3.9'
       - run: pip install groq
+      
       - name: Run Generator
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python generator.py
+      
       - name: Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "New Post" || exit 0
+          git commit -m "New automated post" || exit 0
           git push
+
       - name: Wake up Vercel
         run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
