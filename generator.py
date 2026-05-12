@@ -9,18 +9,15 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 DOMAIN = "https://tdee-arabia.vercel.app"
 
-# قائمة كبيرة ومتنوعة من صور Pexels باش نضمنوا أنها تطلع ديما
+# استخدام روابط صور مباشرة ومستقرة جداً (عالية الجودة من Unsplash مع بارامترات محددة)
 gym_images = [
-    "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/841130/pexels-photo-841130.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/414029/pexels-photo-414029.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/949126/pexels-photo-949126.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/2261477/pexels-photo-2261477.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/1954524/pexels-photo-1954524.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/703012/pexels-photo-703012.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/3823039/pexels-photo-3823039.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/4720236/pexels-photo-4720236.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    "https://images.pexels.com/photos/3768916/pexels-photo-3768916.jpeg?auto=compress&cs=tinysrgb&w=1200"
+    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1593079831268-3381b0db4a77?q=80&w=1200&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1200&auto=format&fit=crop"
 ]
 
 paragraph_styles = [
@@ -65,12 +62,14 @@ def format_content(text):
 def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
-    marker = '' # الماركر دابا ثابت وقوي
+    
+    # تأكد من أن الماركر موجود ف الملف
+    marker = ''
     
     new_card = f"""
     <div class="blog-card bg-white rounded-[2.5rem] shadow-xl overflow-hidden hover:scale-105 transition-all duration-500 border border-slate-100 group" data-category="{category}">
         <div class="relative overflow-hidden h-64">
-            <img src="{image_url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy">
+            <img src="{image_url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="{title}">
             <div class="absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg">{category}</div>
         </div>
         <div class="p-8 text-right">
@@ -81,17 +80,33 @@ def update_blog_list(file_slug, title, image_url, category):
     </div>"""
     
     if not os.path.exists(blog_file):
+        # إنشاء ملف جديد بالماركر إذا لم يكن موجوداً
         initial_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>المدونة | TDEE Arabia</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo'}} .hidden{{display:none}}</style></head>
         <body class="bg-slate-50 text-right"><nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm p-6"><div class="max-w-6xl mx-auto flex justify-between items-center"><h1 class="text-2xl font-black text-blue-600">TDEE ARABIA 🔥</h1><a href="/" class="font-bold text-slate-600">الرئيسية</a></div></nav>
-        <main class="max-w-6xl mx-auto px-4 mt-16 text-center"><h2 class="text-6xl font-black mb-12 text-slate-900 underline decoration-blue-600 decoration-8 underline-offset-8">المدونة الرياضية</h2>
-        <div class="flex flex-wrap justify-center gap-4 mb-12"><button onclick="filterPosts('الكل')" class="bg-blue-600 text-white px-8 py-3 rounded-full font-black shadow-lg">الكل</button><button onclick="filterPosts('تنشيف')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">تنشيف</button><button onclick="filterPosts('تضخيم')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">تضخيم</button><button onclick="filterPosts('مكملات')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">مكملات</button></div>
-        <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 pb-32">{marker}\n{new_card}</div></main>
+        <main class="max-w-6xl mx-auto px-4 mt-16 text-center">
+            <h2 class="text-6xl font-black mb-12 text-slate-900 underline decoration-blue-600 decoration-8 underline-offset-8">المدونة الرياضية</h2>
+            <div class="flex flex-wrap justify-center gap-4 mb-12">
+                <button onclick="filterPosts('الكل')" class="bg-blue-600 text-white px-8 py-3 rounded-full font-black shadow-lg">الكل</button>
+                <button onclick="filterPosts('تنشيف')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">تنشيف</button>
+                <button onclick="filterPosts('تضخيم')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">تضخيم</button>
+                <button onclick="filterPosts('مكملات')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">مكملات</button>
+            </div>
+            <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 pb-32">
+                {marker}
+                {new_card}
+            </div>
+        </main>
         <script>function filterPosts(cat){{document.querySelectorAll('.blog-card').forEach(c=>{{c.classList.toggle('hidden', cat!=='الكل' && c.getAttribute('data-category')!==cat)}})}}</script></body></html>"""
         with open(blog_file, "w", encoding="utf-8") as f: f.write(initial_html)
     else:
         with open(blog_file, "r", encoding="utf-8") as f: content = f.read()
         if marker in content:
+            # إضافة الكارد الجديد مباشرة بعد الماركر لضمان الترتيب التنازلي
             updated_content = content.replace(marker, f"{marker}\n{new_card}")
+            with open(blog_file, "w", encoding="utf-8") as f: f.write(updated_content)
+        else:
+            # حالة طارئة: إذا ضاع الماركر، أضفه في بداية الشبكة
+            updated_content = content.replace('<div id="blog-grid"', f'<div id="blog-grid">\n{marker}\n{new_card}')
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated_content)
 
 def generate():
@@ -99,7 +114,7 @@ def generate():
     category = random.choice(list(cats.keys()))
     title = f"{random.choice(cats[category])} لوزن {random.randint(60, 110)} كجم"
     
-    # اختيار صورة عشوائية من القائمة المضمونة
+    # اختيار صورة عشوائية
     image = random.choice(gym_images)
     
     try:
@@ -109,7 +124,7 @@ def generate():
         
         article_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo'}}</style></head>
         <body class="bg-slate-100"><nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 p-5 shadow-sm border-b"><div class="max-w-5xl mx-auto flex justify-between items-center"><a href="/blog.html" class="text-blue-600 font-bold">← المدونة</a><span class="font-black text-2xl text-slate-900">TDEE <span class="text-blue-600">ARABIA</span> 🔥</span></div></nav>
-        <main class="max-w-4xl mx-auto my-10 px-4"><div class="relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl mb-[-80px] z-10 border-8 border-white"><img src="{image}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div><div class="absolute bottom-12 right-12 text-white"><span class="bg-blue-600 px-4 py-1 rounded-full text-sm font-bold mb-4 inline-block">{category}</span><h1 class="text-4xl md:text-6xl font-black leading-tight drop-shadow-2xl">{title}</h1></div></div>
+        <main class="max-w-4xl mx-auto my-10 px-4"><div class="relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl mb-[-80px] z-10 border-8 border-white"><img src="{image}" class="w-full h-full object-cover" alt="{title}"><div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div><div class="absolute bottom-12 right-12 text-white"><span class="bg-blue-600 px-4 py-1 rounded-full text-sm font-bold mb-4 inline-block">{category}</span><h1 class="text-4xl md:text-6xl font-black leading-tight drop-shadow-2xl">{title}</h1></div></div>
         <article class="bg-white pt-28 pb-16 px-8 md:px-20 rounded-[4rem] shadow-xl relative z-0"><div class="space-y-4">{body}</div></article></main></body></html>"""
         
         with open(file_slug, "w", encoding="utf-8") as f: f.write(article_html)
