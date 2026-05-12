@@ -5,10 +5,12 @@ import re
 import requests
 from groq import Groq
 
+# 1. الإعدادات
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia-pro.vercel.app"
 VERCEL_HOOK = os.environ.get("VERCEL_DEPLOY_HOOK")
 
+# 2. ثوابت التنسيق
 paragraph_styles = [
     "bg-white border-r-4 border-blue-500 text-slate-800",
     "bg-blue-50 border-r-4 border-indigo-400 text-indigo-900",
@@ -16,16 +18,17 @@ paragraph_styles = [
     "bg-emerald-50 border-r-4 border-emerald-400 text-emerald-900"
 ]
 
-# ✅ Marker كتعليق HTML (لن يظهر في الصفحة)
+# الماركر الصحيح (تعليق HTML مخفي)
 MARKER = "<!-- BLOG_POSTS_MARKER -->"
 
+# 3. دوال المساعدة
 def trigger_vercel_deploy():
     if VERCEL_HOOK:
         try:
-            requests.post(VERCEL_HOOK)
-            print("🚀 Vercel Deployment Started!")
+            requests.post(VERCEL_HOOK, timeout=10)
+            print("🚀 تم إرسال إشارة النشر إلى Vercel")
         except Exception as e:
-            print(f"⚠️ Deployment Hook Error: {e}")
+            print(f"⚠️ فشل تنشيط Vercel: {e}")
 
 def update_sitemap(file_slug):
     sitemap_file = "sitemap.xml"
@@ -44,6 +47,7 @@ def update_sitemap(file_slug):
             f.write(updated)
 
 def format_content(text):
+    # تنظيف النص من الرموز غير العربية
     text = re.sub(r'[^\u0600-\u06FF\s\d\.\:\-\!\?\(\)\*]', '', text)
     paragraphs = text.split('\n')
     formatted_html = ""
@@ -59,13 +63,12 @@ def format_content(text):
             formatted_html += f'<div class="p-8 rounded-[2.5rem] border {style} shadow-sm leading-[2.6rem] text-xl mb-8 font-medium text-right">{p}</div>'
     return formatted_html
 
-# ✅ وظيفة جديدة تضمن وجود blog.html دائماً حتى قبل إضافة أي مقال
 def ensure_blog_exists():
+    """تضمن وجود ملف blog.html بالماركر الصحيح، حتى لو كان الملف موجوداً وتالفاً"""
     blog_file = "blog.html"
-    if os.path.exists(blog_file):
-        return
-    # إنشاء ملف افتراضي بالـ marker
-    initial_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>TDEE Arabia Blog</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo', sans-serif;}}</style></head>
+    if not os.path.exists(blog_file):
+        # إنشاء ملف جديد من الصفر
+        initial_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>TDEE Arabia Blog</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo', sans-serif;}}</style></head>
 <body class="bg-slate-50">
     <nav class="bg-white p-6 shadow-sm border-b"><div class="max-w-7xl mx-auto flex justify-between items-center"><h1 class="text-3xl font-black text-blue-600">TDEE ARABIA 🔥</h1></div></nav>
     <main class="max-w-7xl mx-auto px-6 py-16 text-right">
@@ -74,9 +77,44 @@ def ensure_blog_exists():
         </div>
     </main>
 </body></html>"""
+        with open(blog_file, "w", encoding="utf-8") as f:
+            f.write(initial_html)
+        print("📄 تم إنشاء blog.html جديد")
+        return
+
+    # الملف موجود → تأكد من وجود الماركر الصحيح
+    with open(blog_file, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    if MARKER in content:
+        # الماركر موجود، لا حاجة لتعديل
+        print("✓ blog.html سليم والماركر موجود")
+        return
+
+    # الماركر مفقود أو تالف → نصلح الملف مع الاحتفاظ بالبطاقات القديمة إن وجدت
+    print("⚠️ الماركر غير موجود في blog.html، جاري إصلاحه...")
+    old_cards = ""
+    # استخراج كل العناصر التي تشبه بطاقة المقال (حتى لو كانت بدون الماركر)
+    card_pattern = r'(<div class="blog-card.*?</div>\s*</div>)'
+    cards = re.findall(card_pattern, content, re.DOTALL)
+    if cards:
+        old_cards = "\n".join(cards) + "\n"
+        print(f"  ↳ تم استرداد {len(cards)} بطاقة قديمة")
+
+    # بناء ملف جديد بالماركر والبطاقات القديمة
+    new_content = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>TDEE Arabia Blog</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo', sans-serif;}}</style></head>
+<body class="bg-slate-50">
+    <nav class="bg-white p-6 shadow-sm border-b"><div class="max-w-7xl mx-auto flex justify-between items-center"><h1 class="text-3xl font-black text-blue-600">TDEE ARABIA 🔥</h1></div></nav>
+    <main class="max-w-7xl mx-auto px-6 py-16 text-right">
+        <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            {old_cards}
+            {MARKER}
+        </div>
+    </main>
+</body></html>"""
     with open(blog_file, "w", encoding="utf-8") as f:
-        f.write(initial_html)
-    print("📄 تم إنشاء blog.html بنجاح (افتراضي)")
+        f.write(new_content)
+    print("✅ تم إصلاح blog.html ووضع الماركر الصحيح")
 
 def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
@@ -92,34 +130,35 @@ def update_blog_list(file_slug, title, image_url, category):
         </div>
     </div>"""
 
-    # تأكد من وجود الملف والـ marker
-    ensure_blog_exists()
+    ensure_blog_exists()  # يضمن وجود الماركر
     
     with open(blog_file, "r", encoding="utf-8") as f:
         content = f.read()
     
-    # إدراج البطاقة الجديدة فوق الـ marker (أول ظهور)
+    # إضافة البطاقة الجديدة قبل الماركر مباشرة
     if MARKER in content:
-        # استبدال الـ marker بـ marker + البطاقة الجديدة
         updated = content.replace(MARKER, f"{new_card}\n{MARKER}")
         with open(blog_file, "w", encoding="utf-8") as f:
             f.write(updated)
+        print(f"➕ أُضيف المقال: {title}")
     else:
-        # لو الـ marker مفقود (حماية) نضيفه مع البطاقة
+        # حماية: في حالة اختفاء الماركر رغم ensure_blog_exists
+        print("❌ خطأ: الماركر لا يزال مفقوداً رغم المحاولة!")
+        # نضيف الماركر مع البطاقة في نهاية الـ grid
         updated = content.replace('id="blog-grid">', f'id="blog-grid">\n{new_card}\n{MARKER}')
         with open(blog_file, "w", encoding="utf-8") as f:
             f.write(updated)
-    print(f"➕ أُضيف المقال {title} إلى المدونة")
 
 def generate_post():
-    # ✅ ضمان وجود المدونة قبل أي شيء
-    ensure_blog_exists()
+    print("🔄 بدء إنشاء مقال جديد...")
+    ensure_blog_exists()  # الخطوة الأولى
     
     topics = {"تنشيف": "أسرار حرق الدهون", "تضخيم": "أقوى نظام تضخيم", "تغذية": "وجبات اقتصادية"}
     cat = random.choice(list(topics.keys()))
-    title = topics[cat] + " 2026"
+    title = f"{topics[cat]} 2026"
     
     try:
+        print("📡 الاتصال بـ Groq API...")
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": f"اكتب مقال SEO رياضي مطول بالعربية عن {title}"}],
             model="llama-3.3-70b-versatile"
@@ -147,8 +186,8 @@ def generate_post():
         print(f"✅ تم بنجاح: {slug}")
         
     except Exception as e:
-        print(f"❌ فشل إنشاء المقال بسبب خطأ: {e}")
-        # حتى لو فشل المقال، المدونة موجودة (لأن ensure_blog_exists عملها)
+        print(f"❌ فشل إنشاء المقال: {e}")
+        # لا نعيد رفع الخطأ لأن المدونة موجودة على الأقل
 
 if __name__ == "__main__":
     generate_post()
