@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://tdee-arabia.vercel.app/sitemap.xml
