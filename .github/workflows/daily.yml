@@ -1,7 +1,7 @@
 name: Auto Post & Deploy
 on:
   schedule:
-    - cron: '0 */8 * * *'
+    - cron: '0 */8 * * *' # كل 8 ساعات
   workflow_dispatch:
 
 jobs:
@@ -36,5 +36,4 @@ jobs:
 
       - name: Wake up Vercel
         run: |
-          # هاد السطر هو الساروت. جرب تفتح هاد الرابط فالمتصفح دابا، إلا خدم ليك راه غيخدم هنا
           curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
