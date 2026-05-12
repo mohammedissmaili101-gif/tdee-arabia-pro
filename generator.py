@@ -4,22 +4,12 @@ import datetime
 import re
 from groq import Groq
 
-# إعداد العميل
+# 1. إعداد العميل - تأكد أن GROQ_API_KEY موجود في Env Variables
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 DOMAIN = "https://tdee-arabia.vercel.app"
 
-# استخدام روابط صور مباشرة ومستقرة جداً (عالية الجودة من Unsplash مع بارامترات محددة)
-gym_images = [
-    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1593079831268-3381b0db4a77?q=80&w=1200&auto=format&fit=crop",
-    "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1200&auto=format&fit=crop"
-]
-
+# 2. تنسيقات الفقرات (التلوين والجمالية)
 paragraph_styles = [
     "bg-blue-50 border-blue-200 text-blue-900",
     "bg-slate-50 border-slate-200 text-slate-900",
@@ -27,10 +17,18 @@ paragraph_styles = [
     "bg-emerald-50 border-emerald-200 text-emerald-900"
 ]
 
+def get_gym_image():
+    """تجلب رابط صورة رياضية عشوائية ومستقرة تماماً ولا تتكرر"""
+    random_id = random.randint(1, 2000)
+    # نستخدم LoremFlickr لأنها لا تحظر الروابط وتدعم العشوائية بـ lock
+    return f"https://loremflickr.com/1200/800/gym,fitness,workout/all?lock={random_id}"
+
 def update_sitemap(file_slug):
+    """تحديث خريطة الموقع للأرشفة تلقائياً"""
     sitemap_file = "sitemap.xml"
     url = f"{DOMAIN}/{file_slug}"
     today = datetime.date.today().strftime("%Y-%m-%d")
+    
     if not os.path.exists(sitemap_file):
         content = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>{DOMAIN}/</loc><lastmod>{today}</lastmod><priority>1.0</priority></url><url><loc>{DOMAIN}/blog.html</loc><lastmod>{today}</lastmod><priority>0.8</priority></url><url><loc>{url}</loc><lastmod>{today}</lastmod><priority>0.6</priority></url></urlset>'
         with open(sitemap_file, "w", encoding="utf-8") as f: f.write(content)
@@ -42,6 +40,7 @@ def update_sitemap(file_slug):
             with open(sitemap_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def format_content(text):
+    """تحويل النص الخام إلى HTML ملون ومنظم"""
     text = re.sub(r'[^\u0600-\u06FF\s\d\.\:\-\!\?\(\)\*]', '', text)
     paragraphs = text.split('\n')
     formatted_html = ""
@@ -60,16 +59,15 @@ def format_content(text):
     return formatted_html
 
 def update_blog_list(file_slug, title, image_url, category):
+    """إضافة المقال لصفحة المدونة الرئيسية فوق الماركر"""
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
-    
-    # تأكد من أن الماركر موجود ف الملف
     marker = ''
     
     new_card = f"""
     <div class="blog-card bg-white rounded-[2.5rem] shadow-xl overflow-hidden hover:scale-105 transition-all duration-500 border border-slate-100 group" data-category="{category}">
         <div class="relative overflow-hidden h-64">
-            <img src="{image_url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="{title}">
+            <img src="{image_url}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="{title}" loading="lazy">
             <div class="absolute top-4 right-4 bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full shadow-lg">{category}</div>
         </div>
         <div class="p-8 text-right">
@@ -80,58 +78,68 @@ def update_blog_list(file_slug, title, image_url, category):
     </div>"""
     
     if not os.path.exists(blog_file):
-        # إنشاء ملف جديد بالماركر إذا لم يكن موجوداً
         initial_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>المدونة | TDEE Arabia</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo'}} .hidden{{display:none}}</style></head>
         <body class="bg-slate-50 text-right"><nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm p-6"><div class="max-w-6xl mx-auto flex justify-between items-center"><h1 class="text-2xl font-black text-blue-600">TDEE ARABIA 🔥</h1><a href="/" class="font-bold text-slate-600">الرئيسية</a></div></nav>
         <main class="max-w-6xl mx-auto px-4 mt-16 text-center">
             <h2 class="text-6xl font-black mb-12 text-slate-900 underline decoration-blue-600 decoration-8 underline-offset-8">المدونة الرياضية</h2>
-            <div class="flex flex-wrap justify-center gap-4 mb-12">
-                <button onclick="filterPosts('الكل')" class="bg-blue-600 text-white px-8 py-3 rounded-full font-black shadow-lg">الكل</button>
-                <button onclick="filterPosts('تنشيف')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">تنشيف</button>
-                <button onclick="filterPosts('تضخيم')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">تضخيم</button>
-                <button onclick="filterPosts('مكملات')" class="bg-white text-slate-600 px-8 py-3 rounded-full font-black shadow-md hover:bg-blue-600 hover:text-white transition-all">مكملات</button>
-            </div>
             <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 pb-32">
                 {marker}
                 {new_card}
             </div>
-        </main>
-        <script>function filterPosts(cat){{document.querySelectorAll('.blog-card').forEach(c=>{{c.classList.toggle('hidden', cat!=='الكل' && c.getAttribute('data-category')!==cat)}})}}</script></body></html>"""
+        </main></body></html>"""
         with open(blog_file, "w", encoding="utf-8") as f: f.write(initial_html)
     else:
         with open(blog_file, "r", encoding="utf-8") as f: content = f.read()
         if marker in content:
-            # إضافة الكارد الجديد مباشرة بعد الماركر لضمان الترتيب التنازلي
             updated_content = content.replace(marker, f"{marker}\n{new_card}")
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated_content)
-        else:
-            # حالة طارئة: إذا ضاع الماركر، أضفه في بداية الشبكة
-            updated_content = content.replace('<div id="blog-grid"', f'<div id="blog-grid">\n{marker}\n{new_card}')
-            with open(blog_file, "w", encoding="utf-8") as f: f.write(updated_content)
 
-def generate():
-    cats = {"تنشيف": ["تنشيف الجسم", "حرق الدهون"], "تضخيم": ["بناء العضلات", "ضخامة عضلية"], "مكملات": ["أفضل مكملات", "دليل البروتين"]}
-    category = random.choice(list(cats.keys()))
-    title = f"{random.choice(cats[category])} لوزن {random.randint(60, 110)} كجم"
+def generate_post():
+    """الدالة الرئيسية لإنتاج المحتوى"""
+    categories = {
+        "تنشيف": ["تنشيف الجسم", "حرق دهون البطن", "نظام غذائي للتنشيف"],
+        "تضخيم": ["تضخيم العضلات", "أفضل تمارين الضخامة", "وجبات ضخامة عضلية"],
+        "مكملات": ["دليل مكمل الكرياتين", "أفضل واي بروتين", "مكملات ما قبل التمرين"]
+    }
     
-    # اختيار صورة عشوائية
-    image = random.choice(gym_images)
+    category = random.choice(list(categories.keys()))
+    sub_topic = random.choice(categories[category])
+    title = f"{sub_topic} لوزن {random.randint(60, 110)} كجم"
+    
+    image = get_gym_image()
     
     try:
-        res = client.chat.completions.create(messages=[{"role": "user", "content": f"اكتب مقال SEO احترافي بالعربية الفصحى فقط عن {title}. استخدم عناوين بين **فقرات**. تجنب الرموز غير العربية."}], model="llama-3.3-70b-versatile")
-        body = format_content(res.choices[0].message.content)
+        response = client.chat.completions.create(
+            messages=[{"role": "user", "content": f"اكتب مقال SEO احترافي بالعربية الفصحى عن {title}. استخدم عناوين واضحة بين **فقرات**. المقال يجب أن يكون مفصلاً ومفيداً للرياضيين العرب."}],
+            model="llama-3.3-70b-versatile"
+        )
+        
+        content_body = format_content(response.choices[0].message.content)
         file_slug = f"post-{random.randint(10000, 99999)}.html"
         
-        article_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo'}}</style></head>
+        full_page_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>{title}</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo'}}</style></head>
         <body class="bg-slate-100"><nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 p-5 shadow-sm border-b"><div class="max-w-5xl mx-auto flex justify-between items-center"><a href="/blog.html" class="text-blue-600 font-bold">← المدونة</a><span class="font-black text-2xl text-slate-900">TDEE <span class="text-blue-600">ARABIA</span> 🔥</span></div></nav>
-        <main class="max-w-4xl mx-auto my-10 px-4"><div class="relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl mb-[-80px] z-10 border-8 border-white"><img src="{image}" class="w-full h-full object-cover" alt="{title}"><div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div><div class="absolute bottom-12 right-12 text-white"><span class="bg-blue-600 px-4 py-1 rounded-full text-sm font-bold mb-4 inline-block">{category}</span><h1 class="text-4xl md:text-6xl font-black leading-tight drop-shadow-2xl">{title}</h1></div></div>
-        <article class="bg-white pt-28 pb-16 px-8 md:px-20 rounded-[4rem] shadow-xl relative z-0"><div class="space-y-4">{body}</div></article></main></body></html>"""
+        <main class="max-w-4xl mx-auto my-10 px-4">
+            <div class="relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl mb-[-80px] z-10 border-8 border-white">
+                <img src="{image}" class="w-full h-full object-cover" alt="{title}">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+                <div class="absolute bottom-12 right-12 text-white">
+                    <span class="bg-blue-600 px-4 py-1 rounded-full text-sm font-bold mb-4 inline-block">{category}</span>
+                    <h1 class="text-4xl md:text-6xl font-black leading-tight drop-shadow-2xl">{title}</h1>
+                </div>
+            </div>
+            <article class="bg-white pt-28 pb-16 px-8 md:px-20 rounded-[4rem] shadow-xl relative z-0">
+                <div class="space-y-4">{content_body}</div>
+            </article>
+        </main></body></html>"""
         
-        with open(file_slug, "w", encoding="utf-8") as f: f.write(article_html)
+        with open(file_slug, "w", encoding="utf-8") as f: f.write(full_page_html)
         update_blog_list(file_slug, title, image, category)
         update_sitemap(file_slug)
-        print(f"✅ تم بنجاح: {title}")
-    except Exception as e: print(f"❌ خطأ: {e}")
+        print(f"✅ تم النشر بنجاح: {title}")
+        
+    except Exception as e:
+        print(f"❌ حدث خطأ: {e}")
 
 if __name__ == "__main__":
-    generate()
+    generate_post()
