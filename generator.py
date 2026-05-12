@@ -4,10 +4,11 @@ import datetime
 import re
 from groq import Groq
 
-# إعداد العميل
+# 1. إعداد العميل
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia.vercel.app"
 
+# 2. تنسيقات الفقرات
 paragraph_styles = [
     "bg-blue-50 border-blue-200 text-blue-900",
     "bg-slate-50 border-slate-200 text-slate-900",
@@ -54,7 +55,6 @@ def format_content(text):
 def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
-    # ضروري الماركر يكون فيه نص باش السكريبت يلقاه
     marker = ''
     
     new_card = f"""
@@ -88,7 +88,7 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated_content)
 
 def generate_post():
-    categories = {"تنشيف": ["تنشيف الجسم", "حرق دهون البطن"], "تضخيم": ["تضخيم العضلات", "تمارين الضخامة"], "مكملات": ["دليل الكرياتين", "واي بروتين"]}
+    categories = {"تنشيف": ["تنشيف الجسم", "حرق الدهون"], "تضخيم": ["تضخيم العضلات", "الضخامة العضلية"], "مكملات": ["واي بروتين", "كرياتين"]}
     category = random.choice(list(categories.keys()))
     title = f"{random.choice(categories[category])} لوزن {random.randint(60, 110)} كجم"
     image = get_gym_image()
@@ -109,7 +109,7 @@ def generate_post():
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
                 <div class="absolute bottom-12 right-12 text-white"><h1 class="text-4xl md:text-6xl font-black">{title}</h1></div>
             </div>
-            <article class="bg-white pt-28 pb-16 px-8 rounded-[4rem] shadow-xl">{content_body}</article>
+            <article class="bg-white pt-28 pb-16 px-8 rounded-[4rem] shadow-xl relative z-0"><div class="space-y-4">{content_body}</div></article>
         </main></body></html>"""
         
         with open(file_slug, "w", encoding="utf-8") as f: f.write(full_page_html)
