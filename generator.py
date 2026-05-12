@@ -45,7 +45,8 @@ def update_blog_list(file_slug, title, img_url):
         </div>
     </div>
     """
-    new_content = content.replace('', '\n' + new_card)
+    # البحث عن وسم الماين لإضافة الكارد داخله
+    new_content = content.replace('<main class="max-w-5xl mx-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="blog-grid">', f'<main class="max-w-5xl mx-auto p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="blog-grid">\n{new_card}')
     with open(blog_file, "w", encoding="utf-8") as f: f.write(new_content)
 
 def generate():
@@ -56,7 +57,8 @@ def generate():
     
     res = client.chat.completions.create(
         messages=[{"role": "user", "content": f"اكتب مقال SEO احترافي بالعربية عن {title}. استخدم فقرات واضحة ونصائح رياضية."}],
-        model="llama3-8b-8192",
+        # التعديل هنا: استخدام موديل جديد شغال
+        model="llama-3.3-70b-versatile",
     )
     body = res.choices[0].message.content.replace('\n', '<br>')
     file_slug = f"post-{random.randint(1000,9999)}.html"
