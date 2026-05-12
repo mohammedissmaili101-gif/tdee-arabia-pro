@@ -9,7 +9,7 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia-pro.vercel.app"
 
 def format_content(text):
-    # تنظيف وتنسيق النص القادم من AI
+    # تنسيق النص بأسلوب مقالات محترف
     text = re.sub(r'[^\u0600-\u06FF\s\d\.\:\-\!\?\(\)\*]', '', text)
     paragraphs = text.split('\n')
     formatted_html = ""
@@ -20,7 +20,7 @@ def format_content(text):
             title = p.replace('**', '')
             formatted_html += f'<h2 class="text-3xl font-black text-slate-800 mt-12 mb-6 border-r-8 border-blue-600 pr-4 bg-slate-100 py-4 rounded-l-2xl text-right">{title}</h2>'
         else:
-            formatted_html += f'<div class="p-6 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm leading-relaxed text-xl mb-6 text-right text-slate-700">{p}</div>'
+            formatted_html += f'<p class="text-xl text-slate-700 leading-relaxed mb-8 text-right bg-white p-6 rounded-2xl border border-slate-50 shadow-sm">{p}</p>'
     return formatted_html
 
 def update_blog_list(file_slug, title, image_url, category):
@@ -28,7 +28,6 @@ def update_blog_list(file_slug, title, image_url, category):
     today = datetime.date.today().strftime("%Y-%m-%d")
     marker = 'HERE_IS_THE_LIST_MARKER'
     
-    # الكارت مع رابط مباشر وصحيح
     new_card = f"""
     <div class="blog-card bg-white rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all border border-slate-100 overflow-hidden" data-title="{title}">
         <img src="{image_url}" class="w-full h-64 object-cover">
@@ -73,7 +72,7 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    img_keywords = ["gym", "fitness", "workout", "bodybuilding", "protein"]
+    img_keywords = ["gym", "fitness", "workout", "protein", "muscle"]
     topics = {"تنشيف": "أسرار التنشيف العضلي", "تضخيم": "دليل التضخيم الشامل", "تغذية": "أفضل وجبات قبل التمرين"}
     cat = random.choice(list(topics.keys()))
     title = topics[cat] + f" {random.randint(2025, 2026)}"
@@ -87,14 +86,13 @@ def generate_post():
         slug = f"post-{random.randint(10000, 99999)}.html"
         img = f"https://loremflickr.com/800/600/{random.choice(img_keywords)}?lock={random.randint(1,999)}"
         
-        # تصميم صفحة المقال (التعديل المهم هنا لعدم ظهور 404)
         full_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo', sans-serif;}}</style></head>
         <body class="bg-slate-50">
             <article class="max-w-4xl mx-auto py-16 px-6 bg-white shadow-sm min-h-screen">
                 <a href="./blog.html" class="text-blue-600 font-bold mb-8 inline-block hover:underline">← العودة للمدونة</a>
-                <img src="{img}" class="w-full h-96 object-cover rounded-3xl shadow-lg mb-12">
+                <img src="{img}" class="w-full h-96 object-cover rounded-3xl shadow-lg mb-12 border-4 border-white">
                 <h1 class="text-4xl md:text-5xl font-black mb-10 text-slate-900 leading-tight">{title}</h1>
-                <div class="prose prose-xl max-w-none">
+                <div class="blog-content">
                     {body}
                 </div>
             </article>
@@ -102,7 +100,7 @@ def generate_post():
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
         update_blog_list(slug, title, img, cat)
-        print(f"✅ تم إنشاء المقال بنجاح: {slug}")
+        print(f"✅ Success: {slug}")
         
     except Exception as e: print(f"❌ Error: {e}")
 
