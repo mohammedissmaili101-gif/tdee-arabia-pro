@@ -1,9 +1,9 @@
 import os
+import re
+import json
 import random
 import datetime
-import re
 import requests
-import json
 from pathlib import Path
 from groq import Groq
 
@@ -15,7 +15,7 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 VERCEL_HOOK = os.environ.get("VERCEL_DEPLOY_HOOK")
 
 if not GROQ_API_KEY:
-    raise ValueError("❌ Missing GROQ_API_KEY")
+    raise Exception("❌ GROQ_API_KEY NOT FOUND")
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -24,118 +24,118 @@ DOMAIN = "https://tdee-arabia.vercel.app"
 BASE_DIR = Path(__file__).parent
 
 BLOG_FILE = BASE_DIR / "blog.html"
+POSTS_DB = BASE_DIR / "posts.json"
 SITEMAP_FILE = BASE_DIR / "sitemap.xml"
-USED_POSTS_FILE = BASE_DIR / "used_posts.json"
 
 # =========================================================
-# STYLES
+# PROFESSIONAL IMAGES
 # =========================================================
 
-paragraph_styles = [
-    "bg-white border-r-8 border-blue-500 text-slate-800",
-    "bg-blue-50 border-r-8 border-indigo-400 text-indigo-900",
-    "bg-emerald-50 border-r-8 border-emerald-400 text-emerald-900",
-    "bg-orange-50 border-r-8 border-orange-400 text-orange-900",
-    "bg-purple-50 border-r-8 border-purple-400 text-purple-900",
+IMAGES = [
+    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438",
+    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48",
+    "https://images.unsplash.com/photo-1518611012118-696072aa579a",
+    "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b",
+    "https://images.unsplash.com/photo-1517963879433-6ad2b056d712",
+    "https://images.unsplash.com/photo-1517838277536-f5f99be501cd",
+    "https://images.unsplash.com/photo-1519505907962-0a6cb0167c73",
 ]
 
 # =========================================================
 # TOPICS
 # =========================================================
 
-topics = {
+TOPICS = {
     "تنشيف": [
-        "أسرار حرق الدهون",
         "أفضل نظام تنشيف",
-        "كيف تخسر الدهون بسرعة",
+        "أسرار حرق الدهون",
+        "كيف تخسر الكرش بسرعة",
         "أفضل أكل للتنشيف",
-        "أقوى تمارين الكارديو",
-        "كيف تنشف جسمك بدون خسارة العضلات",
+        "تمارين حرق الدهون"
     ],
+
     "تضخيم": [
-        "أقوى نظام تضخيم",
+        "أفضل نظام تضخيم",
         "زيادة الكتلة العضلية",
         "أفضل تمارين التضخيم",
-        "خطة بناء العضلات",
-        "أفضل مكملات التضخيم",
-        "كيف تبني عضلات بسرعة",
+        "بناء العضلات بسرعة",
+        "أفضل مكملات التضخيم"
     ],
+
     "تغذية": [
         "أفضل نظام غذائي رياضي",
-        "أهمية البروتين للعضلات",
+        "فوائد البروتين للعضلات",
         "التغذية الصحية للرياضيين",
-        "كيف تحسب سعراتك الحرارية",
-        "أفضل وجبات بعد التمرين",
+        "أفضل وجبة بعد التمرين",
+        "كيفية حساب السعرات"
     ],
+
     "تمارين": [
         "أفضل تمارين الصدر",
-        "أقوى تمارين الظهر",
-        "تمارين الأرجل الصحيحة",
-        "كيفية تمرين الكتف",
-        "أفضل جدول تدريبي أسبوعي",
+        "أفضل تمارين الأرجل",
+        "تمارين الظهر الصحيحة",
+        "أفضل جدول تدريبي",
+        "كيفية تمرين الكتف"
     ]
 }
 
 # =========================================================
-# USED POSTS SYSTEM
+# STYLES
 # =========================================================
 
-def load_used_posts():
-    if not USED_POSTS_FILE.exists():
+PARAGRAPH_STYLES = [
+    "background:#ffffff;border-right:10px solid #2563eb;color:#0f172a;",
+    "background:#eff6ff;border-right:10px solid #3b82f6;color:#1e3a8a;",
+    "background:#f0fdf4;border-right:10px solid #22c55e;color:#14532d;",
+    "background:#fff7ed;border-right:10px solid #f97316;color:#9a3412;",
+    "background:#faf5ff;border-right:10px solid #9333ea;color:#581c87;"
+]
+
+# =========================================================
+# DATABASE
+# =========================================================
+
+def load_posts():
+
+    if not POSTS_DB.exists():
         return []
 
     try:
-        with open(USED_POSTS_FILE, "r", encoding="utf-8") as f:
+        with open(POSTS_DB, "r", encoding="utf-8") as f:
             return json.load(f)
 
     except:
         return []
 
 
-def save_used_post(title):
+def save_post(post):
 
-    posts = load_used_posts()
+    posts = load_posts()
 
-    posts.append(title)
+    # منع التكرار
+    for p in posts:
 
-    with open(USED_POSTS_FILE, "w", encoding="utf-8") as f:
-        json.dump(posts, f, ensure_ascii=False, indent=4)
+        if p["slug"] == post["slug"]:
+            print("⚠️ المقال موجود مسبقاً")
+            return False
 
+    posts.insert(0, post)
 
-# =========================================================
-# UTILITIES
-# =========================================================
+    with open(POSTS_DB, "w", encoding="utf-8") as f:
 
-def trigger_vercel_deploy():
-
-    if not VERCEL_HOOK:
-        print("⚠️ No Vercel Hook Found")
-        return
-
-    try:
-
-        response = requests.post(
-            VERCEL_HOOK,
-            timeout=10
+        json.dump(
+            posts,
+            f,
+            ensure_ascii=False,
+            indent=4
         )
 
-        if response.status_code in [200, 201]:
-            print("🚀 Vercel Deployment Started!")
-
-    except Exception as e:
-        print(f"⚠️ Deploy Error: {e}")
+    return True
 
 
-def clean_text(text):
-
-    text = text.strip()
-
-    text = text.replace("##", "")
-    text = text.replace("###", "")
-    text = text.replace("*", "")
-
-    return text
-
+# =========================================================
+# SLUG
+# =========================================================
 
 def generate_slug(title):
 
@@ -153,16 +153,62 @@ def generate_slug(title):
 
 
 # =========================================================
+# UNIQUE TITLE
+# =========================================================
+
+def generate_unique_title():
+
+    posts = load_posts()
+
+    used_titles = [
+        p["title"] for p in posts
+    ]
+
+    available = []
+
+    for category, items in TOPICS.items():
+
+        for item in items:
+
+            title = item + " 2026"
+
+            if title not in used_titles:
+
+                available.append(
+                    (category, title)
+                )
+
+    if not available:
+        raise Exception("❌ جميع المواضيع استعملت")
+
+    return random.choice(available)
+
+
+# =========================================================
+# CLEAN TEXT
+# =========================================================
+
+def clean_text(text):
+
+    text = text.replace("##", "")
+    text = text.replace("###", "")
+    text = text.replace("*", "")
+    text = text.strip()
+
+    return text
+
+
+# =========================================================
 # FORMAT ARTICLE
 # =========================================================
 
-def format_content(text):
+def format_article(text):
 
     text = clean_text(text)
 
     paragraphs = text.split("\n")
 
-    formatted = ""
+    html = ""
 
     for p in paragraphs:
 
@@ -171,34 +217,32 @@ def format_content(text):
         if not p:
             continue
 
-        # عناوين
+        # عنوان
         if (
-            len(p) < 90
+            len(p) < 80
             and (
                 ":" in p
                 or "فوائد" in p
-                or "أهمية" in p
-                or "تمارين" in p
                 or "نصائح" in p
+                or "تمارين" in p
                 or "خاتمة" in p
+                or "أهمية" in p
             )
         ):
 
-            formatted += f"""
-            <h2 class="
-            text-4xl
-            font-black
-            text-slate-900
-            mt-16
-            mb-8
-            border-r-[12px]
-            border-blue-600
-            pr-6
-            py-5
-            bg-white
-            rounded-[2rem]
-            shadow-lg
-            text-right
+            html += f"""
+            <h2 style="
+            font-size:42px;
+            font-weight:900;
+            margin-top:70px;
+            margin-bottom:35px;
+            padding:25px;
+            border-right:12px solid #2563eb;
+            background:white;
+            border-radius:30px;
+            color:#0f172a;
+            line-height:1.8;
+            box-shadow:0 10px 25px rgba(0,0,0,.05);
             ">
             {p}
             </h2>
@@ -206,387 +250,24 @@ def format_content(text):
 
         else:
 
-            style = random.choice(paragraph_styles)
+            style = random.choice(PARAGRAPH_STYLES)
 
-            formatted += f"""
-            <div class="
+            html += f"""
+            <div style="
             {style}
-            p-10
-            rounded-[2.5rem]
-            shadow-md
-            leading-[2.8rem]
-            text-[22px]
-            mb-10
-            font-medium
-            text-right
-            transition-all
-            hover:scale-[1.01]
+            padding:40px;
+            border-radius:35px;
+            margin-bottom:35px;
+            line-height:2.4;
+            font-size:24px;
+            font-weight:600;
+            box-shadow:0 10px 25px rgba(0,0,0,.05);
             ">
             {p}
             </div>
             """
 
-    return formatted
-
-
-# =========================================================
-# SITEMAP
-# =========================================================
-
-def update_sitemap(slug):
-
-    today = datetime.date.today().strftime("%Y-%m-%d")
-
-    url = f"{DOMAIN}/{slug}"
-
-    if not SITEMAP_FILE.exists():
-
-        sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
-
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-<url>
-<loc>{DOMAIN}</loc>
-<lastmod>{today}</lastmod>
-</url>
-
-</urlset>
-"""
-
-        SITEMAP_FILE.write_text(
-            sitemap,
-            encoding="utf-8"
-        )
-
-    content = SITEMAP_FILE.read_text(
-        encoding="utf-8"
-    )
-
-    if url in content:
-        return
-
-    new_url = f"""
-
-<url>
-<loc>{url}</loc>
-<lastmod>{today}</lastmod>
-</url>
-
-</urlset>
-"""
-
-    updated = content.replace(
-        "</urlset>",
-        new_url
-    )
-
-    SITEMAP_FILE.write_text(
-        updated,
-        encoding="utf-8"
-    )
-
-    print("✅ Sitemap Updated")
-
-
-# =========================================================
-# BLOG PAGE
-# =========================================================
-
-def create_blog_page_if_not_exists():
-
-    if BLOG_FILE.exists():
-        return
-
-    html = """
-<!DOCTYPE html>
-
-<html lang="ar" dir="rtl">
-
-<head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>TDEE Arabia Blog</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-
-<style>
-
-body{
-    font-family:'Cairo',sans-serif;
-}
-
-</style>
-
-</head>
-
-<body class="bg-slate-100">
-
-<!-- HEADER -->
-
-<header class="bg-white shadow-md sticky top-0 z-50">
-
-<div class="max-w-7xl mx-auto px-6 py-6">
-
-<div class="flex flex-col md:flex-row gap-6 justify-between items-center">
-
-<h1 class="text-4xl font-black text-blue-600">
-TDEE ARABIA 🔥
-</h1>
-
-<input
-id="searchInput"
-type="text"
-placeholder="ابحث عن مقال..."
-class="
-w-full
-md:w-[350px]
-px-6
-py-4
-rounded-2xl
-border-2
-border-slate-200
-focus:outline-none
-focus:border-blue-500
-text-right
-font-bold
-"
-/>
-
-</div>
-
-<!-- FILTERS -->
-
-<div class="flex flex-wrap gap-4 mt-6 justify-center">
-
-<button onclick="filterPosts('all')" class="filter-btn bg-slate-900 text-white px-6 py-3 rounded-2xl font-black">
-الكل
-</button>
-
-<button onclick="filterPosts('تنشيف')" class="filter-btn bg-blue-500 text-white px-6 py-3 rounded-2xl font-black">
-تنشيف
-</button>
-
-<button onclick="filterPosts('تضخيم')" class="filter-btn bg-emerald-500 text-white px-6 py-3 rounded-2xl font-black">
-تضخيم
-</button>
-
-<button onclick="filterPosts('تغذية')" class="filter-btn bg-orange-500 text-white px-6 py-3 rounded-2xl font-black">
-تغذية
-</button>
-
-<button onclick="filterPosts('تمارين')" class="filter-btn bg-purple-500 text-white px-6 py-3 rounded-2xl font-black">
-تمارين
-</button>
-
-</div>
-
-</div>
-
-</header>
-
-<!-- POSTS -->
-
-<main class="max-w-7xl mx-auto px-6 py-16">
-
-<div
-id="blog-grid"
-class="
-grid
-grid-cols-1
-md:grid-cols-2
-xl:grid-cols-3
-gap-12
-"
->
-
-PLACEHOLDER_MARKER
-
-</div>
-
-</main>
-
-<script>
-
-const searchInput = document.getElementById("searchInput")
-
-searchInput.addEventListener("keyup", function(){
-
-    const value = this.value.toLowerCase()
-
-    const posts = document.querySelectorAll(".blog-card")
-
-    posts.forEach(post=>{
-
-        const title = post
-        .querySelector(".post-title")
-        .innerText
-        .toLowerCase()
-
-        if(title.includes(value)){
-            post.style.display = "block"
-        }else{
-            post.style.display = "none"
-        }
-
-    })
-
-})
-
-function filterPosts(category){
-
-    const posts = document.querySelectorAll(".blog-card")
-
-    posts.forEach(post=>{
-
-        if(
-            category === "all"
-            ||
-            post.dataset.category === category
-        ){
-            post.style.display = "block"
-        }else{
-            post.style.display = "none"
-        }
-
-    })
-
-}
-
-</script>
-
-</body>
-
-</html>
-"""
-
-    BLOG_FILE.write_text(
-        html,
-        encoding="utf-8"
-    )
-
-    print("✅ Blog Page Created")
-
-
-# =========================================================
-# ADD BLOG CARD
-# =========================================================
-
-def add_blog_card(
-    slug,
-    title,
-    image,
-    category
-):
-
-    create_blog_page_if_not_exists()
-
-    today = datetime.date.today().strftime(
-        "%Y-%m-%d"
-    )
-
-    card = f"""
-
-<div
-class="
-blog-card
-bg-white
-rounded-[3rem]
-overflow-hidden
-shadow-xl
-hover:shadow-2xl
-transition-all
-duration-300
-"
-data-category="{category}"
->
-
-<img
-src="{image}"
-class="w-full h-72 object-cover"
-alt="{title}"
->
-
-<div class="p-10 text-right">
-
-<span class="
-inline-block
-bg-blue-100
-text-blue-700
-px-4
-py-2
-rounded-xl
-font-black
-mb-5
-">
-{category}
-</span>
-
-<h2 class="
-post-title
-text-3xl
-font-black
-text-slate-900
-leading-[3rem]
-mb-6
-">
-{title}
-</h2>
-
-<p class="
-text-slate-500
-font-bold
-mb-8
-">
-📅 {today}
-</p>
-
-<a
-href="./{slug}"
-class="
-block
-w-full
-text-center
-bg-slate-900
-hover:bg-blue-600
-transition-all
-text-white
-font-black
-py-5
-rounded-2xl
-text-xl
-"
->
-
-إقرأ المقال ←
-
-</a>
-
-</div>
-
-</div>
-
-"""
-
-    content = BLOG_FILE.read_text(
-        encoding="utf-8"
-    )
-
-    updated = content.replace(
-        "PLACEHOLDER_MARKER",
-        f"{card}\nPLACEHOLDER_MARKER"
-    )
-
-    BLOG_FILE.write_text(
-        updated,
-        encoding="utf-8"
-    )
-
-    print("✅ Blog Card Added")
+    return html
 
 
 # =========================================================
@@ -597,27 +278,26 @@ def generate_article(title, category):
 
     prompt = f"""
 
-اكتب مقال عربي احترافي جدا عن:
+اكتب مقال عربي احترافي طويل جدا عن:
 
 {title}
 
 التصنيف:
 {category}
 
-شروط المقال:
+الشروط:
 
-- 2000 كلمة
-- أسلوب بشري احترافي
+- 2500 كلمة
 - SEO قوي
+- أسلوب بشري احترافي
 - بدون تكرار
-- معلومات رياضية دقيقة
+- معلومات دقيقة
+- عناوين فرعية
 - مقدمة قوية
 - خاتمة قوية
-- فقرات طويلة
-- عناوين واضحة
-- بدون markdown
-- بدون رموز نجوم
-- لغة عربية ممتازة
+- لا تستعمل markdown
+- لا تستعمل النجوم
+- لا تستعمل الرموز
 
 """
 
@@ -633,7 +313,7 @@ def generate_article(title, category):
         ],
 
         temperature=0.9,
-        max_tokens=5000
+        max_tokens=6000
     )
 
     return response.choices[0].message.content
@@ -646,14 +326,12 @@ def generate_article(title, category):
 def create_post_page(
     title,
     category,
-    body,
+    article_html,
     image,
     slug
 ):
 
-    today = datetime.date.today().strftime(
-        "%Y-%m-%d"
-    )
+    today = datetime.date.today().strftime("%Y-%m-%d")
 
     html = f"""
 <!DOCTYPE html>
@@ -670,7 +348,7 @@ def create_post_page(
 
 <meta
 name="description"
-content="{title} - أفضل مقالات الرياضة والتغذية"
+content="{title} - أفضل المقالات الرياضية"
 >
 
 <link
@@ -682,16 +360,89 @@ href="{DOMAIN}/{slug}"
 <meta property="og:image" content="{image}">
 <meta property="og:type" content="article">
 
-<script src="https://cdn.tailwindcss.com"></script>
-
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
 
 <style>
 
-body{
-    font-family:'Cairo',sans-serif;
-    background:#f1f5f9;
-}
+*{{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}}
+
+body{{
+font-family:'Cairo',sans-serif;
+background:#f1f5f9;
+}}
+
+.header{{
+background:white;
+padding:25px;
+box-shadow:0 5px 20px rgba(0,0,0,.05);
+position:sticky;
+top:0;
+z-index:999;
+}}
+
+.logo{{
+font-size:42px;
+font-weight:900;
+color:#2563eb;
+text-decoration:none;
+}}
+
+.container{{
+max-width:1100px;
+margin:auto;
+padding:50px 20px;
+}}
+
+.hero-image{{
+width:100%;
+height:500px;
+object-fit:cover;
+border-radius:40px;
+margin-bottom:40px;
+box-shadow:0 15px 40px rgba(0,0,0,.12);
+}}
+
+.category{{
+display:inline-block;
+background:#2563eb;
+color:white;
+padding:12px 25px;
+border-radius:18px;
+font-weight:900;
+font-size:20px;
+margin-bottom:25px;
+}}
+
+.title{{
+font-size:58px;
+font-weight:900;
+line-height:1.7;
+color:#0f172a;
+margin-bottom:30px;
+}}
+
+.date{{
+font-size:22px;
+font-weight:700;
+color:#64748b;
+margin-bottom:50px;
+}}
+
+@media(max-width:768px){{
+
+.title{{
+font-size:38px;
+}}
+
+.hero-image{{
+height:300px;
+}}
+
+}}
 
 </style>
 
@@ -699,146 +450,440 @@ body{
 
 <body>
 
-<!-- HEADER -->
+<div class="header">
 
-<header class="
-bg-white
-shadow-md
-sticky
-top-0
-z-50
-">
-
-<div class="
-max-w-6xl
-mx-auto
-px-6
-py-6
-flex
-justify-between
-items-center
-">
-
-<a href="./blog.html" class="
-text-blue-600
-font-black
-text-4xl
-">
+<a href="./blog.html" class="logo">
 TDEE ARABIA 🔥
 </a>
 
 </div>
 
-</header>
-
-<!-- ARTICLE -->
-
-<main class="
-max-w-5xl
-mx-auto
-px-6
-py-16
-">
+<div class="container">
 
 <img
 src="{image}"
-class="
-w-full
-rounded-[3rem]
-shadow-2xl
-mb-12
-max-h-[550px]
-object-cover
-"
+class="hero-image"
 alt="{title}"
 >
 
-<span class="
-inline-block
-bg-blue-600
-text-white
-font-black
-px-5
-py-3
-rounded-2xl
-mb-8
-text-xl
-">
+<div class="category">
 {category}
-</span>
+</div>
 
-<h1 class="
-text-5xl
-font-black
-text-slate-900
-leading-[5rem]
-mb-8
-text-right
-">
+<h1 class="title">
 {title}
 </h1>
 
-<div class="
-text-right
-text-slate-500
-font-bold
-mb-14
-text-xl
-">
+<div class="date">
 📅 {today}
 </div>
 
-{body}
+{article_html}
 
-</main>
+</div>
 
 </body>
 
 </html>
 """
 
-    post_path = BASE_DIR / slug
-
-    post_path.write_text(
-        html,
+    with open(
+        BASE_DIR / slug,
+        "w",
         encoding="utf-8"
-    )
+    ) as f:
+
+        f.write(html)
 
     print(f"✅ Post Created: {slug}")
 
 
 # =========================================================
-# GENERATE UNIQUE TITLE
+# GENERATE BLOG PAGE
 # =========================================================
 
-def generate_unique_post():
+def generate_blog_page():
 
-    used_posts = load_used_posts()
+    posts = load_posts()
 
-    available = []
+    cards = ""
 
-    for category, items in topics.items():
+    for post in posts:
 
-        for title in items:
+        cards += f"""
 
-            full_title = title + " 2026"
+<div
+class="card"
+data-category="{post['category']}"
+>
 
-            if full_title not in used_posts:
+<img
+src="{post['image']}"
+class="card-image"
+alt="{post['title']}"
+>
 
-                available.append(
-                    (
-                        category,
-                        full_title
-                    )
-                )
+<div class="card-content">
 
-    if not available:
+<div class="card-category">
+{post['category']}
+</div>
 
-        raise Exception(
-            "❌ جميع المواضيع استعملت"
+<h2 class="card-title">
+{post['title']}
+</h2>
+
+<div class="card-date">
+📅 {post['date']}
+</div>
+
+<a
+href="./{post['slug']}"
+class="read-btn"
+>
+إقرأ المقال →
+</a>
+
+</div>
+
+</div>
+
+"""
+
+    html = f"""
+<!DOCTYPE html>
+
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>TDEE Arabia</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+
+*{{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}}
+
+body{{
+font-family:'Cairo',sans-serif;
+background:#f1f5f9;
+padding:20px;
+}}
+
+.container{{
+max-width:1450px;
+margin:auto;
+}}
+
+.logo{{
+font-size:55px;
+font-weight:900;
+color:#2563eb;
+margin-bottom:40px;
+}}
+
+.search{{
+width:100%;
+padding:22px;
+border:none;
+border-radius:25px;
+font-size:22px;
+margin-bottom:30px;
+box-shadow:0 5px 20px rgba(0,0,0,.05);
+}}
+
+.filters{{
+display:flex;
+gap:15px;
+flex-wrap:wrap;
+margin-bottom:40px;
+}}
+
+.filter-btn{{
+border:none;
+padding:14px 28px;
+border-radius:18px;
+font-size:18px;
+font-weight:900;
+cursor:pointer;
+background:#0f172a;
+color:white;
+}}
+
+.grid{{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+gap:35px;
+}}
+
+.card{{
+background:white;
+border-radius:35px;
+overflow:hidden;
+box-shadow:0 10px 30px rgba(0,0,0,.08);
+transition:.3s;
+}}
+
+.card:hover{{
+transform:translateY(-10px);
+}}
+
+.card-image{{
+width:100%;
+height:270px;
+object-fit:cover;
+}}
+
+.card-content{{
+padding:30px;
+}}
+
+.card-category{{
+display:inline-block;
+background:#2563eb;
+color:white;
+padding:10px 18px;
+border-radius:14px;
+font-weight:900;
+margin-bottom:20px;
+}}
+
+.card-title{{
+font-size:32px;
+line-height:1.7;
+font-weight:900;
+color:#0f172a;
+margin-bottom:20px;
+}}
+
+.card-date{{
+color:#64748b;
+font-weight:700;
+margin-bottom:25px;
+}}
+
+.read-btn{{
+display:block;
+text-align:center;
+background:#0f172a;
+color:white;
+padding:18px;
+border-radius:18px;
+text-decoration:none;
+font-weight:900;
+font-size:20px;
+}}
+
+@media(max-width:768px){{
+
+.logo{{
+font-size:38px;
+}}
+
+.card-title{{
+font-size:26px;
+}}
+
+body{{
+padding:12px;
+}}
+
+}}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1 class="logo">
+TDEE ARABIA 🔥
+</h1>
+
+<input
+type="text"
+id="searchInput"
+placeholder="ابحث عن مقال..."
+class="search"
+>
+
+<div class="filters">
+
+<button class="filter-btn" onclick="filterPosts('all')">
+الكل
+</button>
+
+<button class="filter-btn" onclick="filterPosts('تنشيف')">
+تنشيف
+</button>
+
+<button class="filter-btn" onclick="filterPosts('تضخيم')">
+تضخيم
+</button>
+
+<button class="filter-btn" onclick="filterPosts('تغذية')">
+تغذية
+</button>
+
+<button class="filter-btn" onclick="filterPosts('تمارين')">
+تمارين
+</button>
+
+</div>
+
+<div class="grid">
+
+{cards}
+
+</div>
+
+</div>
+
+<script>
+
+const searchInput =
+document.getElementById("searchInput")
+
+searchInput.addEventListener("keyup",function(){{
+
+const value=this.value.toLowerCase()
+
+document.querySelectorAll(".card")
+.forEach(card=>{{
+
+const title=
+card.querySelector(".card-title")
+.innerText
+.toLowerCase()
+
+if(title.includes(value)){{
+card.style.display="block"
+}}else{{
+card.style.display="none"
+}}
+
+}})
+
+}})
+
+function filterPosts(category){{
+
+document.querySelectorAll(".card")
+.forEach(card=>{{
+
+if(
+category==="all"
+||
+card.dataset.category===category
+){{
+card.style.display="block"
+}}else{{
+card.style.display="none"
+}}
+
+}})
+
+}}
+
+</script>
+
+</body>
+
+</html>
+"""
+
+    with open(
+        BLOG_FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write(html)
+
+    print("✅ Blog Updated")
+
+
+# =========================================================
+# SITEMAP
+# =========================================================
+
+def update_sitemap():
+
+    posts = load_posts()
+
+    today = datetime.date.today().strftime("%Y-%m-%d")
+
+    urls = ""
+
+    for post in posts:
+
+        urls += f"""
+
+<url>
+<loc>{DOMAIN}/{post['slug']}</loc>
+<lastmod>{today}</lastmod>
+</url>
+
+"""
+
+    sitemap = f"""<?xml version="1.0" encoding="UTF-8"?>
+
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+<url>
+<loc>{DOMAIN}</loc>
+<lastmod>{today}</lastmod>
+</url>
+
+{urls}
+
+</urlset>
+"""
+
+    with open(
+        SITEMAP_FILE,
+        "w",
+        encoding="utf-8"
+    ) as f:
+
+        f.write(sitemap)
+
+    print("✅ Sitemap Updated")
+
+
+# =========================================================
+# DEPLOY
+# =========================================================
+
+def deploy():
+
+    if not VERCEL_HOOK:
+        print("⚠️ No Vercel Hook")
+        return
+
+    try:
+
+        requests.post(
+            VERCEL_HOOK,
+            timeout=10
         )
 
-    return random.choice(available)
+        print("🚀 Deployment Started")
+
+    except Exception as e:
+
+        print(f"⚠️ Deploy Error: {e}")
 
 
 # =========================================================
@@ -849,7 +894,7 @@ def generate_post():
 
     try:
 
-        category, title = generate_unique_post()
+        category, title = generate_unique_title()
 
         print(f"🚀 Generating: {title}")
 
@@ -858,36 +903,41 @@ def generate_post():
             category
         )
 
-        formatted = format_content(
+        formatted_article = format_article(
             article
         )
 
         slug = generate_slug(title)
 
-        image = f"https://loremflickr.com/1200/800/gym?lock={random.randint(1,999999)}"
+        image = random.choice(IMAGES)
 
         create_post_page(
             title,
             category,
-            formatted,
+            formatted_article,
             image,
             slug
         )
 
-        add_blog_card(
-            slug,
-            title,
-            image,
-            category
-        )
+        success = save_post({
 
-        update_sitemap(slug)
+            "title": title,
+            "slug": slug,
+            "image": image,
+            "category": category,
+            "date": datetime.date.today().strftime("%Y-%m-%d")
 
-        save_used_post(title)
+        })
 
-        trigger_vercel_deploy()
+        if success:
 
-        print("🎉 DONE SUCCESSFULLY")
+            generate_blog_page()
+
+            update_sitemap()
+
+            deploy()
+
+            print("🎉 DONE SUCCESSFULLY")
 
     except Exception as e:
 
