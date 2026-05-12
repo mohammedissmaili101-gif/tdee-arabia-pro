@@ -2,15 +2,15 @@ import os
 import random
 import datetime
 import re
-import requests # ضفنا هادي باش نصيفطو الطلب لـ Vercel
+import requests
 from groq import Groq
 
 # 1. إعداد العميل والروابط
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia.vercel.app"
-VERCEL_HOOK = os.environ.get("VERCEL_DEPLOY_HOOK") # هادا هو الـ Variable اللي ضفتي فـ Secrets
+VERCEL_HOOK = os.environ.get("VERCEL_DEPLOY_HOOK")
 
-# 2. تنسيقات الفقرات (التلوين والجمالية)
+# 2. تنسيقات الفقرات
 paragraph_styles = [
     "bg-blue-50 border-blue-200 text-blue-900",
     "bg-slate-50 border-slate-200 text-slate-900",
@@ -19,7 +19,6 @@ paragraph_styles = [
 ]
 
 def trigger_vercel_deploy():
-    """هاد الدالة كتعلم Vercel يدير Deploy جديد"""
     if VERCEL_HOOK:
         try:
             requests.post(VERCEL_HOOK)
@@ -66,6 +65,8 @@ def format_content(text):
 def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
+    
+    # 🔴 شوف هنا مزيان: الماركر دابا مستحيل يكون خاوي
     marker = ''
     
     new_card = f"""
@@ -98,8 +99,9 @@ def update_blog_list(file_slug, title, image_url, category):
             updated_content = content.replace(marker, f"{marker}\n{new_card}")
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated_content)
         else:
-            # حالة احتياطية إذا تم مسح الماركر بالخطأ
-            with open(blog_file, "w", encoding="utf-8") as f: f.write(content + new_card)
+            # 💡 صمام أمان جديد: إذا تم مسح الماركر، السكريبت كيقلب على الـ Grid ويحط فيه المقال
+            updated_content = content.replace('<div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 pb-32">', f'<div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 pb-32">\n{marker}\n{new_card}')
+            with open(blog_file, "w", encoding="utf-8") as f: f.write(updated_content)
 
 def generate_post():
     categories = {"تنشيف": ["تنشيف الجسم", "حرق الدهون"], "تضخيم": ["تضخيم العضلات", "الضخامة العضلية"], "مكملات": ["واي بروتين", "كرياتين"]}
@@ -129,7 +131,7 @@ def generate_post():
         with open(file_slug, "w", encoding="utf-8") as f: f.write(full_page_html)
         update_blog_list(file_slug, title, image, category)
         update_sitemap(file_slug)
-        trigger_vercel_deploy() # هنا كنعلمو Vercel
+        trigger_vercel_deploy()
         print(f"✅ Success: {file_slug}")
     except Exception as e: print(f"❌ Error: {e}")
 
