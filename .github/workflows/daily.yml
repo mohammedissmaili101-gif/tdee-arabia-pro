@@ -1,37 +1,25 @@
 name: Auto Post Generator
-
 on:
-  schedule:
-    - cron: '0 0 * * *' # يعمل تلقائياً كل يوم
-  workflow_dispatch: # يسمح لك بتشغيله يدوياً
-
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # إعطاء صلاحية الكتابة للمستودع
-    
+      contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
           python-version: '3.9'
-
-      - name: Install dependencies
-        run: pip install groq
-
+      - run: pip install groq
       - name: Run Generator
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         run: python generator.py
-
-      - name: Commit and Push changes
+      - name: Push Changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Update blog with new post" || echo "No changes to commit"
+          git commit -m "New Post" || exit 0
           git push
