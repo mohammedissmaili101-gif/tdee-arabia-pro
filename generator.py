@@ -8,7 +8,7 @@ from groq import Groq
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia.vercel.app"
 
-# 2. تنسيقات الفقرات
+# 2. تنسيقات الفقرات (التلوين اللي بغيتي)
 paragraph_styles = [
     "bg-blue-50 border-blue-200 text-blue-900",
     "bg-slate-50 border-slate-200 text-slate-900",
@@ -56,7 +56,7 @@ def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
     
-    # --- التعديل الجوهري هنا (الماركر لازم يكون فيه هاد النص) ---
+    # 🔴 الماركر دابا عامر ومريكل (ممنوع تقيسو)
     marker = ''
     
     new_card = f"""
