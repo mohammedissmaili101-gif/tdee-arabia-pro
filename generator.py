@@ -5,7 +5,7 @@ import re
 import requests
 from groq import Groq
 
-# 1. الإعدادات والربط
+# 1. إعدادات الربط والبيئة
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia.vercel.app"
 VERCEL_HOOK = os.environ.get("VERCEL_DEPLOY_HOOK")
@@ -21,13 +21,14 @@ def trigger_vercel_deploy():
     if VERCEL_HOOK:
         try:
             requests.post(VERCEL_HOOK)
-            print("🚀 Vercel Deploy Triggered!")
+            print("🚀 Vercel Deployment Triggered Successfully!")
         except Exception as e:
-            print(f"⚠️ Vercel Error: {e}")
+            print(f"⚠️ Vercel Hook Error: {e}")
 
 def get_gym_image():
-    random_id = random.randint(1, 10000)
-    return f"https://loremflickr.com/1200/800/gym,fitness,workout/all?lock={random_id}"
+    # استخدام معرف عشوائي لضمان عدم تكرار الصور
+    random_id = random.randint(1, 20000)
+    return f"https://loremflickr.com/1200/800/gym,fitness,bodybuilding/all?lock={random_id}"
 
 def update_sitemap(file_slug):
     sitemap_file = "sitemap.xml"
@@ -45,6 +46,7 @@ def update_sitemap(file_slug):
             with open(sitemap_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def format_content(text):
+    # تنظيف النص من الرموز الغريبة مع الحفاظ على العربية
     text = re.sub(r'[^\u0600-\u06FF\s\d\.\:\-\!\?\(\)\*]', '', text)
     paragraphs = text.split('\n')
     formatted_html = ""
@@ -53,19 +55,18 @@ def format_content(text):
         if not p: continue
         if p.startswith('**') and p.endswith('**'):
             title = p.replace('**', '')
-            formatted_html += f'<h2 class="text-3xl font-black text-blue-800 mt-12 mb-6 border-r-8 border-blue-600 pr-4 bg-blue-100 py-4 rounded-l-2xl shadow-sm">{title}</h2>'
+            formatted_html += f'<h2 class="text-3xl font-black text-blue-800 mt-12 mb-6 border-r-8 border-blue-600 pr-4 bg-blue-100 py-4 rounded-l-2xl shadow-sm text-right">{title}</h2>'
         elif p.startswith('* '):
             item = p.replace('* ', '')
-            formatted_html += f'<div class="flex items-center gap-3 mb-4 p-4 bg-white rounded-xl border-r-4 border-blue-400 shadow-sm"><span class="text-2xl">⚡</span><p class="font-bold text-slate-700">{item}</p></div>'
+            formatted_html += f'<div class="flex items-center gap-3 mb-4 p-4 bg-white rounded-xl border-r-4 border-blue-400 shadow-sm text-right"><span class="text-2xl">⚡</span><p class="font-bold text-slate-700">{item}</p></div>'
         else:
             style = random.choice(paragraph_styles)
-            formatted_html += f'<div class="p-8 rounded-[2rem] border-2 {style} shadow-sm leading-[2.3rem] text-xl mb-6">{p}</div>'
+            formatted_html += f'<div class="p-8 rounded-[2rem] border-2 {style} shadow-sm leading-[2.3rem] text-xl mb-6 text-right font-medium">{p}</div>'
     return formatted_html
 
 def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
-    # تم الإصلاح: الماركر دابا محدد بدقة
     marker = ''
     
     new_card = f"""
@@ -76,7 +77,7 @@ def update_blog_list(file_slug, title, image_url, category):
         </div>
         <div class="p-8 text-right">
             <span class="text-blue-500 font-bold text-sm">{today}</span>
-            <h3 class="post-title text-2xl font-black mt-3 mb-6 text-slate-900 leading-tight h-20 overflow-hidden">{title}</h3>
+            <h3 class="post-title text-2xl font-black mt-3 mb-6 text-slate-900 leading-tight h-24 overflow-hidden text-right">{title}</h3>
             <a href="./{file_slug}" class="inline-block w-full text-center bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all shadow-lg">قراءة المقال ←</a>
         </div>
     </div>"""
@@ -87,12 +88,12 @@ def update_blog_list(file_slug, title, image_url, category):
             <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm p-6 text-right"><div class="max-w-6xl mx-auto flex justify-between items-center"><h1 class="text-2xl font-black text-blue-600">TDEE ARABIA 🔥</h1><a href="/" class="font-bold text-slate-600">الرئيسية</a></div></nav>
             <main class="max-w-6xl mx-auto px-4 mt-10">
                 <div class="text-center mb-12">
-                    <h2 class="text-5xl font-black text-slate-900 mb-6 italic">المدونة الرياضية</h2>
-                    <input type="text" id="searchInput" placeholder="ابحث عن مقال..." class="px-6 py-4 rounded-2xl border-2 border-slate-200 focus:border-blue-500 outline-none w-full max-w-md shadow-lg mb-8 text-right">
+                    <h2 class="text-5xl font-black text-slate-900 mb-6 italic text-center">المدونة الرياضية</h2>
+                    <div class="flex justify-center"><input type="text" id="searchInput" placeholder="ابحث عن مقال..." class="px-6 py-4 rounded-2xl border-2 border-slate-200 focus:border-blue-500 outline-none w-full max-w-md shadow-lg mb-8 text-right"></div>
                     <div class="flex flex-wrap justify-center gap-3">
                         <button onclick="filterBlog('all')" class="bg-slate-900 text-white px-8 py-2 rounded-full font-bold shadow-md">الكل</button>
-                        <button onclick="filterBlog('تنشيف')" class="bg-white border px-8 py-2 rounded-full font-bold hover:bg-blue-600 hover:text-white">تنشيف</button>
-                        <button onclick="filterBlog('تضخيم')" class="bg-white border px-8 py-2 rounded-full font-bold hover:bg-blue-600 hover:text-white">تضخيم</button>
+                        <button onclick="filterBlog('تنشيف')" class="bg-white border px-8 py-2 rounded-full font-bold hover:bg-blue-600 hover:text-white transition-all">تنشيف</button>
+                        <button onclick="filterBlog('تضخيم')" class="bg-white border px-8 py-2 rounded-full font-bold hover:bg-blue-600 hover:text-white transition-all">تضخيم</button>
                     </div>
                 </div>
                 <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-32">
@@ -122,21 +123,22 @@ def update_blog_list(file_slug, title, image_url, category):
             updated = content.replace(marker, f"{marker}\n{new_card}")
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
         else:
+            # حالة الطوارئ: إعادة زرع الماركر
             grid_tag = '<div id="blog-grid"'
             if grid_tag in content:
                 parts = content.split(grid_tag, 1)
-                inner_parts = parts[1].split('>', 1)
-                updated = parts[0] + grid_tag + inner_parts[0] + '>' + f"\n{marker}\n{new_card}" + inner_parts[1]
+                sub_parts = parts[1].split('>', 1)
+                updated = parts[0] + grid_tag + sub_parts[0] + '>' + f"\n{marker}\n{new_card}" + sub_parts[1]
                 with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    categories = {"تنشيف": ["حرق الدهون", "تنشيف الجسم"], "تضخيم": ["زيادة الكتلة", "تضخيم العضلات"], "مكملات": ["أفضل مكملات"]}
+    categories = {"تنشيف": ["تنشيف سريع", "حرق دهون البطن"], "تضخيم": ["تضخيم عضلي صافي", "برنامج الضخامة"], "مكملات": ["مراجعة مكملات"]}
     cat_key = random.choice(list(categories.keys()))
     title = f"{random.choice(categories[cat_key])} لوزن {random.randint(60, 110)} كجم"
     
     try:
         response = client.chat.completions.create(
-            messages=[{"role": "user", "content": f"اكتب مقال SEO رياضي بلهجة احترافية عن {title}."}],
+            messages=[{"role": "user", "content": f"اكتب مقال SEO رياضي بالعربية عن {title}. استعمل عناوين واضحة."}],
             model="llama-3.3-70b-versatile"
         )
         body = format_content(response.choices[0].message.content)
@@ -146,7 +148,7 @@ def generate_post():
         full_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>{title}</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo'}}</style></head>
         <body class="bg-slate-100"><nav class="bg-white p-5 shadow-sm border-b sticky top-0 z-50 text-right"><div class="max-w-5xl mx-auto flex justify-between items-center"><a href="./blog.html" class="text-blue-600 font-bold">← المدونة</a><span class="font-black text-2xl text-slate-900">TDEE ARABIA 🔥</span></div></nav>
         <main class="max-w-4xl mx-auto my-10 px-4 text-right">
-            <div class="relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl mb-[-80px] z-10 border-8 border-white"><img src="{img}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/30 flex items-end p-12"><h1 class="text-white text-5xl font-black leading-tight">{title}</h1></div></div>
+            <div class="relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl mb-[-80px] z-10 border-8 border-white"><img src="{img}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/30 flex items-end p-12"><h1 class="text-white text-5xl font-black leading-tight text-right">{title}</h1></div></div>
             <article class="bg-white pt-32 pb-16 px-8 rounded-[4rem] shadow-xl relative z-0">{body}</article>
         </main></body></html>"""
         
@@ -154,8 +156,8 @@ def generate_post():
         update_blog_list(slug, title, img, cat_key)
         update_sitemap(slug)
         trigger_vercel_deploy()
-        print(f"✅ Success: {slug}")
-    except Exception as e: print(f"❌ Error: {e}")
+        print(f"✅ Created and Indexed: {slug}")
+    except Exception as e: print(f"❌ Critical Error: {e}")
 
 if __name__ == "__main__":
     generate_post()
