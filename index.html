@@ -5,25 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TDEE Arabia | حاسبة السعرات والماكروز الاحترافية 2026</title>
     <meta name="description" content="أدق حاسبة TDEE وماكروز للسوق العربي. احسب سعراتك بدقة 100% مع نظام توليد محتوى تلقائي للرياضيين.">
+    
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔥</text></svg>">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Cairo', sans-serif; background: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed; background-size: cover; }
+        body { font-family: 'Cairo', sans-serif; background: url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop') no-repeat center center fixed; background-size: cover; scroll-behavior: smooth; }
         .glass { background: rgba(255, 255, 255, 0.94); backdrop-filter: blur(10px); }
         .gradient-text { background: linear-gradient(90deg, #2563eb, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+        .modal.active { display: flex; }
     </style>
 </head>
 <body class="min-h-screen">
     <header class="glass sticky top-0 z-50 shadow-md">
         <nav class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-2">
-                <div class="bg-blue-600 p-2 rounded-lg text-white font-black">🔥</div>
+                <div class="bg-blue-600 p-2 rounded-lg text-white font-black text-xl leading-none">🔥</div>
                 <span class="text-2xl font-black gradient-text">TDEE ARABIA</span>
             </div>
-            <div class="hidden md:flex gap-6 font-bold text-sm">
+            <div class="hidden md:flex gap-6 font-bold text-sm text-slate-700">
                 <a href="#calc" class="hover:text-blue-600">الحاسبة</a>
-                <a href="#articles" class="hover:text-blue-600">دليل التغذية</a>
-                <a href="#about" class="hover:text-blue-600">حول</a>
+                <a href="javascript:void(0)" onclick="openModal('contact-modal')" class="hover:text-blue-600">اتصل بنا</a>
+                <a href="javascript:void(0)" onclick="openModal('privacy-modal')" class="hover:text-blue-600">الخصوصية</a>
             </div>
         </nav>
     </header>
@@ -40,28 +45,67 @@
             <label class="block font-bold mb-2">مستوى النشاط</label>
             <select id="activity" class="w-full p-4 rounded-xl border-2 mb-8 outline-none">
                 <option value="1.2">خامل (بدون تمرين)</option>
+                <option value="1.375">نشاط خفيف (1-2 أيام)</option>
                 <option value="1.55">نشاط متوسط (3-5 أيام)</option>
-                <option value="1.9">نشاط عالٍ (رياضي)</option>
+                <option value="1.725">نشاط عالٍ (6-7 أيام)</option>
+                <option value="1.9">نشاط مكثف (رياضي محترف)</option>
             </select>
             <button onclick="calculate()" class="w-full bg-blue-600 text-white font-black py-5 rounded-2xl text-xl shadow-lg hover:scale-[1.01] transition-all">تحليل البيانات 🔥</button>
 
             <div id="results" class="hidden mt-8 p-6 bg-blue-50 rounded-2xl border-2 border-blue-200">
                 <div class="text-center mb-6">
-                    <p class="font-bold text-blue-600">سعراتك اليومية</p>
-                    <div class="text-5xl font-black" id="res-tdee">0</div>
+                    <p class="font-bold text-blue-600">سعراتك اليومية للمحافظة</p>
+                    <div class="text-5xl font-black text-slate-900" id="res-tdee">0</div>
                 </div>
                 <div class="grid grid-cols-3 gap-4 text-center">
-                    <div class="bg-white p-3 rounded-lg"><p class="text-xs font-bold">بروتين</p><div id="p-prot" class="font-black text-blue-600">0</div></div>
-                    <div class="bg-white p-3 rounded-lg"><p class="text-xs font-bold">دهون</p><div id="p-fat" class="font-black text-blue-600">0</div></div>
-                    <div class="bg-white p-3 rounded-lg"><p class="text-xs font-bold">كارب</p><div id="p-carb" class="font-black text-blue-600">0</div></div>
+                    <div class="bg-white p-3 rounded-xl shadow-sm"><p class="text-xs font-bold text-slate-500">بروتين</p><div id="p-prot" class="font-black text-blue-600 text-lg">0</div></div>
+                    <div class="bg-white p-3 rounded-xl shadow-sm"><p class="text-xs font-bold text-slate-500">دهون</p><div id="p-fat" class="font-black text-blue-600 text-lg">0</div></div>
+                    <div class="bg-white p-3 rounded-xl shadow-sm"><p class="text-xs font-bold text-slate-500">كارب</p><div id="p-carb" class="font-black text-blue-600 text-lg">0</div></div>
                 </div>
             </div>
         </section>
+
+        <section id="articles" class="mt-12 glass rounded-3xl p-8 shadow-xl">
+             <h2 class="text-2xl font-black mb-4">لماذا يجب عليك حساب TDEE؟</h2>
+             <p class="font-bold text-slate-700 leading-relaxed">حساب إجمالي استهلاك الطاقة اليومي (TDEE) هو المفتاح للتحكم في وزنك. سواء كنت ترغب في تنشيف الدهون أو تضخيم العضلات، فإن معرفة سعراتك بدقة تمنعك من العشوائية وتضمن لك نتائج ملموسة في أقصر وقت ممكن.</p>
+        </section>
     </main>
 
-    <footer class="glass mt-12 py-8 text-center text-xs font-bold">
-        <p>&copy; 2026 FocusHive - TDEE ARABIA</p>
-        <div class="mt-2 text-blue-600"><a href="#">الخصوصية</a> | <a href="#">الشروط</a></div>
+    <div id="privacy-modal" class="modal" onclick="closeModal('privacy-modal')">
+        <div class="bg-white p-8 rounded-3xl max-w-lg w-full relative" onclick="event.stopPropagation()">
+            <h2 class="text-2xl font-black mb-4 text-blue-600">سياسة الخصوصية</h2>
+            <p class="font-bold text-slate-600 text-sm leading-relaxed">نحن في TDEE Arabia لا نقوم بتخزين أي بيانات شخصية. جميع الحسابات تتم في متصفحك. نستخدم Google Analytics فقط لتحليل الزيارات بشكل مجهول.</p>
+            <button onclick="closeModal('privacy-modal')" class="mt-6 w-full bg-slate-100 py-3 rounded-xl font-bold">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="contact-modal" class="modal" onclick="closeModal('contact-modal')">
+        <div class="bg-white p-8 rounded-3xl max-w-lg w-full text-center" onclick="event.stopPropagation()">
+            <h2 class="text-2xl font-black mb-4">اتصل بنا</h2>
+            <p class="font-bold text-slate-600 mb-4">يسعدنا تواصلك معنا عبر البريد الإلكتروني:</p>
+            <a href="mailto:mohammedissmaili101@gmail.com" class="text-xl font-black text-blue-600">mohammedissmaili101@gmail.com</a>
+            <button onclick="closeModal('contact-modal')" class="mt-6 w-full bg-slate-100 py-3 rounded-xl font-bold">إغلاق</button>
+        </div>
+    </div>
+
+    <div id="terms-modal" class="modal" onclick="closeModal('terms-modal')">
+        <div class="bg-white p-8 rounded-3xl max-w-lg w-full" onclick="event.stopPropagation()">
+            <h2 class="text-2xl font-black mb-4">شروط الاستخدام</h2>
+            <p class="font-bold text-slate-600 text-sm leading-relaxed">هذه الحاسبة تقدم أرقاماً تقديرية بناءً على معادلات علمية. يجب دائماً استشارة أخصائي تغذية قبل البدء في أي برنامج غذائي صارم.</p>
+            <button onclick="closeModal('terms-modal')" class="mt-6 w-full bg-slate-100 py-3 rounded-xl font-bold">إغلاق</button>
+        </div>
+    </div>
+
+    <footer class="glass mt-12 py-10 text-center">
+        <p class="font-black gradient-text text-lg">TDEE ARABIA - FocusHive</p>
+        <div class="mt-4 flex justify-center gap-4 text-[11px] font-bold text-slate-500">
+            <button onclick="openModal('privacy-modal')">سياسة الخصوصية</button>
+            <span>|</span>
+            <button onclick="openModal('terms-modal')">شروط الاستخدام</button>
+            <span>|</span>
+            <button onclick="openModal('contact-modal')">الدعم الفني</button>
+        </div>
+        <p class="mt-6 text-[10px] text-slate-400 font-bold">&copy; 2026 جميع الحقوق محفوظة لـ FocusHive</p>
     </footer>
 
     <script>
@@ -71,16 +115,20 @@
             const a = parseFloat(document.getElementById('age').value);
             const g = document.getElementById('gender').value;
             const act = parseFloat(document.getElementById('activity').value);
-            if(!w || !h || !a) return alert("عمر الخانات!");
+            if(!w || !h || !a) return alert("عمر الخانات كاملة يا بطل!");
             let bmr = (10 * w) + (6.25 * h) - (5 * a);
             bmr = (g === 'male') ? bmr + 5 : bmr - 161;
             const tdee = Math.round(bmr * act);
-            document.getElementById('res-tdee').innerText = tdee;
+            document.getElementById('res-tdee').innerText = tdee.toLocaleString();
             document.getElementById('p-prot').innerText = Math.round((tdee*0.3)/4) + "g";
             document.getElementById('p-fat').innerText = Math.round((tdee*0.35)/9) + "g";
             document.getElementById('p-carb').innerText = Math.round((tdee*0.35)/4) + "g";
             document.getElementById('results').classList.remove('hidden');
+            window.scrollTo({ top: document.getElementById('results').offsetTop - 100, behavior: 'smooth' });
         }
+
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
     </script>
 </body>
 </html>
