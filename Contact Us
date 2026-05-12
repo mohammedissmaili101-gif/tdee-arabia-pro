@@ -1,0 +1,5 @@
+<div id="contact" class="glass p-8 rounded-2xl mt-10 text-center">
+    <h2 class="text-2xl font-bold mb-4">اتصل بنا</h2>
+    <p class="font-bold">لديك استفسار؟ تواصل معنا مباشرة:</p>
+    <a href="mailto:mohammedissmaili101@gmail.com" class="text-blue-600 font-black text-lg">mohammedissmaili101@gmail.com</a>
+</div>
