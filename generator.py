@@ -26,14 +26,12 @@ def trigger_vercel_deploy():
         except Exception as e: print(f"⚠️ Deployment Hook Error: {e}")
 
 def get_gym_image(category):
-    # صور احترافية حسب نوع الموضوع
     keywords = {
         "تنشيف": "fitness,abs,cardio",
         "تضخيم": "bodybuilding,gym,muscle",
         "مكملات": "protein,supplements",
         "تغذية": "healthy-food,diet",
-        "تمارين": "workout,training",
-        "عقلية": "motivation,focus"
+        "تمارين": "workout,training"
     }
     kw = keywords.get(category, "fitness")
     rand = random.randint(1, 50000)
@@ -74,7 +72,7 @@ def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
     
-    # تأكيد الماركر 100%
+    # السطر 82: الماركر دابا عامر ومضمون
     marker = ''
     
     new_card = f"""
@@ -86,45 +84,20 @@ def update_blog_list(file_slug, title, image_url, category):
         <div class="p-10 text-right">
             <span class="text-blue-500 font-bold text-sm tracking-widest">{today}</span>
             <h3 class="post-title text-2xl font-black mt-4 mb-8 text-slate-900 leading-snug h-24 overflow-hidden">{title}</h3>
-            <a href="./{file_slug}" class="inline-block w-full text-center bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-blue-600 transition-all shadow-xl uppercase tracking-wider">إقرأ التفاصيل الكاملة ←</a>
+            <a href="./{file_slug}" class="inline-block w-full text-center bg-slate-900 text-white font-black py-5 rounded-2xl hover:bg-blue-600 transition-all shadow-xl">إقرأ التفاصيل ←</a>
         </div>
     </div>"""
 
     if not os.path.exists(blog_file):
-        initial_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>مدونة TDEE Arabia | دليلك للكمال الأجسام</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo', sans-serif;}} .blog-card{{display:block;}}</style></head>
+        initial_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>مدونة TDEE Arabia</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo', sans-serif;}}</style></head>
         <body class="bg-slate-50 text-slate-900">
-            <nav class="bg-white/90 backdrop-blur-md p-6 shadow-sm sticky top-0 z-50 border-b border-slate-100"><div class="max-w-7xl mx-auto flex justify-between items-center"><h1 class="text-3xl font-black text-blue-600">TDEE ARABIA 🔥</h1><div class="space-x-4 space-x-reverse"><a href="/" class="font-bold text-slate-600 hover:text-blue-600">الرئيسية</a></div></div></nav>
+            <nav class="bg-white p-6 shadow-sm sticky top-0 z-50 text-right"><div class="max-w-7xl mx-auto flex justify-between items-center"><h1 class="text-3xl font-black text-blue-600">TDEE ARABIA 🔥</h1><a href="/" class="font-bold text-slate-600">الرئيسية</a></div></nav>
             <main class="max-w-7xl mx-auto px-6 py-16">
-                <div class="text-center mb-20">
-                    <h2 class="text-6xl font-black text-slate-900 mb-8 italic tracking-tighter">أحدث المقالات الرياضية</h2>
-                    <div class="flex justify-center mb-10"><input type="text" id="searchInput" placeholder="ابحث عن مقال معين..." class="px-8 py-5 rounded-3xl border-2 border-slate-200 focus:border-blue-500 outline-none w-full max-w-2xl shadow-2xl text-right text-lg"></div>
-                    <div class="flex flex-wrap justify-center gap-4">
-                        <button onclick="filterBlog('all')" class="bg-blue-600 text-white px-10 py-3 rounded-full font-black shadow-lg">الكل</button>
-                        <button onclick="filterBlog('تنشيف')" class="bg-white border-2 border-slate-100 px-8 py-3 rounded-full font-bold hover:bg-slate-900 hover:text-white transition-all">تنشيف</button>
-                        <button onclick="filterBlog('تضخيم')" class="bg-white border-2 border-slate-100 px-8 py-3 rounded-full font-bold hover:bg-slate-900 hover:text-white transition-all">تضخيم</button>
-                        <button onclick="filterBlog('تغذية')" class="bg-white border-2 border-slate-100 px-8 py-3 rounded-full font-bold hover:bg-slate-900 hover:text-white transition-all">تغذية</button>
-                        <button onclick="filterBlog('مكملات')" class="bg-white border-2 border-slate-100 px-8 py-3 rounded-full font-bold hover:bg-slate-900 hover:text-white transition-all">مكملات</button>
-                    </div>
-                </div>
-                <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 pb-32">
+                <div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
                     {marker}
                     {new_card}
                 </div>
             </main>
-            <script>
-                function filterBlog(cat) {{
-                    document.querySelectorAll('.blog-card').forEach(c => {{
-                        c.style.display = (cat === 'all' || c.dataset.category === cat) ? 'block' : 'none';
-                    }});
-                }}
-                document.getElementById('searchInput').addEventListener('input', (e) => {{
-                    const t = e.target.value.toLowerCase();
-                    document.querySelectorAll('.blog-card').forEach(c => {{
-                        const title = c.querySelector('.post-title').innerText.toLowerCase();
-                        c.style.display = title.includes(t) ? 'block' : 'none';
-                    }});
-                }});
-            </script>
         </body></html>"""
         with open(blog_file, "w", encoding="utf-8") as f: f.write(initial_html)
     else:
@@ -132,23 +105,28 @@ def update_blog_list(file_slug, title, image_url, category):
         if marker in content:
             updated = content.replace(marker, f"{marker}\n{new_card}")
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
+        else:
+            # ترميم الطوارئ: يلا مالقاش الماركر كيحطو تحت الـ blog-grid
+            grid_tag = 'id="blog-grid">'
+            if grid_tag in content:
+                updated = content.replace(grid_tag, f'{grid_tag}\n{marker}\n{new_card}')
+                with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    # قاعدة بيانات مواضيع ضخمة
     topics = {
-        "تنشيف": ["أسرار حرق دهون أسفل البطن", "كيف تنشف جسمك في 30 يوم", "أفضل تمارين الكارديو للتنشيف"],
-        "تضخيم": ["دليل تضخيم عضلات الظهر", "أقوى نظام تدريبي للضخامة العضلية", "سر الـ 5 وجبات للتضخيم"],
-        "تغذية": ["وجبات رخيصة غنية بالبروتين", "أفضل مصادر الكارب المعقد", "كيف تحسب سعراتك بدقة"],
-        "مكملات": ["هل الكرياتين يسبب تساقط الشعر؟", "أفضل أنواع الواي بروتين", "مكملات ما قبل التمرين"],
-        "تمارين": ["أخطاء شائعة في تمرين السكوات", "كيف تزيد قوتك في البنش برس", "تمارين منزلية فعالة"]
+        "تنشيف": ["أسرار حرق الدهون", "كيف تنشف بسرعة", "تمارين البطن"],
+        "تضخيم": ["دليل تضخيم العضلات", "برنامج الضخامة العضلية", "سر الوجبات الضخمة"],
+        "تغذية": ["وجبات بروتينية رخيصة", "حساب السعرات بدقة", "أفضل مصادر الكارب"],
+        "مكملات": ["فوائد الكرياتين", "مراجعة الواي بروتين", "مكملات الطاقة"],
+        "تمارين": ["أخطاء البنش برس", "فوائد السكوات", "تمارين منزلية"]
     }
     cat_key = random.choice(list(topics.keys()))
     topic = random.choice(topics[cat_key])
-    title = f"{topic} - تحديث 2026"
+    title = f"{topic} - دليل 2026"
     
     try:
         response = client.chat.completions.create(
-            messages=[{"role": "user", "content": f"اكتب مقال SEO رياضي احترافي ومطول بالعربية عن {title}. استعمل عناوين فرعية ونقاط."}],
+            messages=[{"role": "user", "content": f"اكتب مقال SEO رياضي بالعربية عن {title}. استعمل عناوين فرعية ونقاط."}],
             model="llama-3.3-70b-versatile"
         )
         body = format_content(response.choices[0].message.content)
@@ -157,12 +135,11 @@ def generate_post():
         
         full_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>{title}</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo';}}</style></head>
         <body class="bg-slate-50">
-            <nav class="bg-white p-6 shadow-sm border-b sticky top-0 z-50"><div class="max-w-5xl mx-auto flex justify-between items-center"><a href="./blog.html" class="text-blue-600 font-bold">← العودة للمدونة</a><span class="font-black text-2xl">TDEE ARABIA 🔥</span></div></nav>
+            <nav class="bg-white p-6 shadow-sm sticky top-0 z-50 text-right"><div class="max-w-5xl mx-auto flex justify-between items-center"><a href="./blog.html" class="text-blue-600 font-bold">← رجوع</a><span class="font-black text-2xl">TDEE ARABIA 🔥</span></div></nav>
             <main class="max-w-5xl mx-auto my-12 px-6 text-right">
-                <div class="relative h-[500px] rounded-[4rem] overflow-hidden shadow-3xl mb-[-100px] z-10 border-[12px] border-white"><img src="{img}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-12"><h1 class="text-white text-5xl font-black leading-tight">{title}</h1></div></div>
-                <article class="bg-white pt-40 pb-20 px-12 rounded-[5rem] shadow-2xl relative z-0">{body}</article>
-            </main>
-        </body></html>"""
+                <div class="relative h-[450px] rounded-[3rem] overflow-hidden shadow-2xl mb-[-80px] z-10 border-8 border-white"><img src="{img}" class="w-full h-full object-cover"><div class="absolute inset-0 bg-black/40 flex items-end p-12"><h1 class="text-white text-4xl font-black">{title}</h1></div></div>
+                <article class="bg-white pt-32 pb-16 px-10 rounded-[4rem] shadow-xl relative z-0">{body}</article>
+            </main></body></html>"""
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
         update_blog_list(slug, title, img, cat_key)
