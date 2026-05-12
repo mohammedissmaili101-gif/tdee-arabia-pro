@@ -2,19 +2,30 @@ import os
 import random
 import datetime
 import re
+import requests # ضفنا هادي باش نصيفطو الطلب لـ Vercel
 from groq import Groq
 
-# 1. إعداد العميل
+# 1. إعداد العميل والروابط
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia.vercel.app"
+VERCEL_HOOK = os.environ.get("VERCEL_DEPLOY_HOOK") # هادا هو الـ Variable اللي ضفتي فـ Secrets
 
-# 2. تنسيقات الفقرات (التلوين اللي بغيتي)
+# 2. تنسيقات الفقرات (التلوين والجمالية)
 paragraph_styles = [
     "bg-blue-50 border-blue-200 text-blue-900",
     "bg-slate-50 border-slate-200 text-slate-900",
     "bg-indigo-50 border-indigo-200 text-indigo-900",
     "bg-emerald-50 border-emerald-200 text-emerald-900"
 ]
+
+def trigger_vercel_deploy():
+    """هاد الدالة كتعلم Vercel يدير Deploy جديد"""
+    if VERCEL_HOOK:
+        try:
+            requests.post(VERCEL_HOOK)
+            print("🚀 Vercel Deploy Triggered Successfully!")
+        except Exception as e:
+            print(f"⚠️ Could not trigger Vercel: {e}")
 
 def get_gym_image():
     random_id = random.randint(1, 2000)
@@ -55,8 +66,6 @@ def format_content(text):
 def update_blog_list(file_slug, title, image_url, category):
     blog_file = "blog.html"
     today = datetime.date.today().strftime("%Y-%m-%d")
-    
-    # 🔴 الماركر دابا عامر ومريكل (ممنوع تقيسو)
     marker = ''
     
     new_card = f"""
@@ -88,6 +97,9 @@ def update_blog_list(file_slug, title, image_url, category):
         if marker in content:
             updated_content = content.replace(marker, f"{marker}\n{new_card}")
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated_content)
+        else:
+            # حالة احتياطية إذا تم مسح الماركر بالخطأ
+            with open(blog_file, "w", encoding="utf-8") as f: f.write(content + new_card)
 
 def generate_post():
     categories = {"تنشيف": ["تنشيف الجسم", "حرق الدهون"], "تضخيم": ["تضخيم العضلات", "الضخامة العضلية"], "مكملات": ["واي بروتين", "كرياتين"]}
@@ -117,6 +129,7 @@ def generate_post():
         with open(file_slug, "w", encoding="utf-8") as f: f.write(full_page_html)
         update_blog_list(file_slug, title, image, category)
         update_sitemap(file_slug)
+        trigger_vercel_deploy() # هنا كنعلمو Vercel
         print(f"✅ Success: {file_slug}")
     except Exception as e: print(f"❌ Error: {e}")
 
