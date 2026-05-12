@@ -3,7 +3,11 @@
   <url>
     <loc>https://tdee-arabia.vercel.app/</loc>
     <lastmod>2026-05-12</lastmod>
-    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
-  </urlset>
+  <url>
+    <loc>https://tdee-arabia.vercel.app/blog.html</loc>
+    <lastmod>2026-05-12</lastmod>
+    <priority>0.9</priority>
+  </url>
+</urlset>
