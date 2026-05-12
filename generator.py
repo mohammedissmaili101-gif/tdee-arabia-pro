@@ -3,104 +3,86 @@ import random
 import datetime
 from groq import Groq
 
-# 1. إعداد العميل (كيقرا الـ Key من GitHub Secrets)
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
-# 2. بيانات لتوليد آلاف الاحتمالات (pSEO)
-weights = [60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110]
-goals = [
-    {"name": "تنشيف الدهون", "slug": "cutting"},
-    {"name": "تضخيم العضلات", "slug": "bulking"},
-    {"name": "المحافظة على الوزن", "slug": "maintenance"}
+# مكتبة صور رياضية (روابط مباشرة من Unsplash)
+gym_images = [
+    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800",
+    "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=800",
+    "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800",
+    "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800",
+    "https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800"
 ]
 
-def update_sitemap(new_file):
-    """تحديث ملف sitemap.xml أوتوماتيكياً"""
-    sitemap_path = "sitemap.xml"
-    base_url = "https://tdee-arabia.vercel.app/"
-    new_url = f"{base_url}{new_file}"
-    today = datetime.date.today().isoformat()
+weights = [60, 70, 80, 90, 100]
+goals = [{"name": "تنشيف الدهون", "slug": "cutting"}, {"name": "تضخيم العضلات", "slug": "bulking"}]
 
-    if not os.path.exists(sitemap_path):
-        # إنشاء ملف سيت ماب جديد إذا لم يكن موجوداً
-        content = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>{base_url}</loc>\n    <lastmod>{today}</lastmod>\n    <priority>1.0</priority>\n  </url>\n</urlset>'
-        with open(sitemap_path, "w", encoding="utf-8") as f:
-            f.write(content)
-
-    with open(sitemap_path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-
-    # إضافة الرابط الجديد قبل إغلاق </urlset>
-    new_entry = f'  <url>\n    <loc>{new_url}</loc>\n    <lastmod>{today}</lastmod>\n    <priority>0.8</priority>\n  </url>\n'
-    
-    # التأكد من أن الرابط غير موجود مسبقاً
-    if new_url not in "".join(lines):
-        lines.insert(-1, new_entry)
-        with open(sitemap_path, "w", encoding="utf-8") as f:
-            f.writelines(lines)
-
-def generate_article():
+def generate_blog_post():
     weight = random.choice(weights)
     goal = random.choice(goals)
-    today = datetime.date.today().isoformat()
+    img_url = random.choice(gym_images)
+    title = f"دليل {goal['name']} لوزن {weight} كجم - نصائح 2026"
     
-    # الطلب الموجه لـ AI
-    prompt = f"""
-    اكتب مقال SEO احترافي باللغة العربية.
-    العنوان: دليل {goal['name']} الشامل لوزن {weight} كيلوجرام لعام 2026.
-    المحتوى يجب أن يتضمن:
-    1. مقدمة قوية عن أهمية حساب TDEE.
-    2. نصائح دقيقة للتغذية والتمارين لهدف {goal['name']}.
-    3. جدول وجبات مقترح يحتوي على بروتين كافٍ.
-    4. دعوة للقارئ لاستخدام حاسبة TDEE Arabia في صفحتنا الرئيسية.
-    استخدم كلمات مفتاحية: (تنشيف، تضخيم، بروتين، سعرات حرارية، كمال أجسام).
-    اللغة: عربية فصحى بسيطة مع لمسة لهجة مغربية خفيفة في النصائح الجانبية.
-    """
-
-    # الاتصال بـ Groq API
+    prompt = f"اكتب مقال SEO احترافي باللغة العربية عن {goal['name']} لشخص وزنه {weight}kg. استعمل تقسيم بفقرات وعناوين فرعية."
+    
     completion = client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model="llama3-8b-8192",
     )
+    
+    body = completion.choices[0].message.content.replace('\n', '<br>')
+    file_slug = f"post-{random.randint(1000,9999)}.html"
 
-    article_content = completion.choices[0].message.content
-    file_slug = f"guide-{goal['slug']}-{weight}kg-{random.randint(100,999)}.html"
-
-    # تصميم قالب المقال (HTML) باش يجي مع السيت
-    html_template = f"""
+    # قالب صفحة المقال (بحال Blogger)
+    post_template = f"""
     <!DOCTYPE html>
     <html lang="ar" dir="rtl">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>دليل {goal['name']} لوزن {weight} كجم | TDEE Arabia</title>
+        <title>{title}</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
-        <style>body {{ font-family: 'Cairo', sans-serif; background: #f8fafc; }}</style>
     </head>
-    <body class="p-6 md:p-12">
-        <div class="max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-slate-100">
-            <a href="/" class="text-blue-600 font-bold">← العودة للحاسبة</a>
-            <div class="prose prose-slate mt-6 font-bold leading-relaxed">
-                {article_content.replace('\n', '<br>')}
+    <body class="bg-slate-50 font-['Cairo']">
+        <nav class="bg-white shadow-sm p-4 sticky top-0"><div class="max-w-3xl mx-auto flex justify-between items-center"><a href="/blog.html" class="text-blue-600 font-bold">← العودة للمدونة</a><a href="/" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold">جرب الحاسبة 🔥</a></div></nav>
+        <article class="max-w-3xl mx-auto my-10 bg-white rounded-3xl shadow-lg overflow-hidden">
+            <img src="{img_url}" class="w-full h-64 object-cover">
+            <div class="p-8">
+                <h1 class="text-3xl font-black mb-6 leading-tight">{title}</h1>
+                <div class="text-slate-700 leading-loose font-bold">{body}</div>
             </div>
-            <div class="mt-10 p-6 bg-blue-50 rounded-xl text-center">
-                <p class="font-black text-blue-800">هل تريد حساب سعراتك بدقة؟</p>
-                <a href="/" class="inline-block mt-4 bg-blue-600 text-white px-8 py-3 rounded-full font-black">جرب الحاسبة الآن 🔥</a>
-            </div>
-        </div>
-    </footer>
+        </article>
     </body>
     </html>
     """
-
-    # حفظ الملف
-    with open(file_slug, "w", encoding="utf-8") as f:
-        f.write(html_template)
     
-    # تحديث Sitemap
-    update_sitemap(file_slug)
-    print(f"✅ تم إنشاء المقال: {file_slug}")
+    with open(file_slug, "w", encoding="utf-8") as f:
+        f.write(post_template)
+    
+    update_blog_list(file_slug, title, img_url)
+
+def update_blog_list(file_slug, title, img_url):
+    blog_file = "blog.html"
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    
+    if not os.path.exists(blog_file):
+        initial_content = """<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>المدونة | TDEE Arabia</title><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"></head><body class="bg-slate-100 font-['Cairo']"><nav class="p-6 text-center"><a href="/" class="text-3xl font-black text-blue-600">TDEE ARABIA 🔥</a><p class="font-bold text-slate-500">مدونة اللياقة والتغذية</p></nav><main class="max-w-5xl mx-auto p-6 grid grid-cols-1 md:grid-cols-2 gap-6" id="blog-grid"></main></body></html>"""
+        with open(blog_file, "w", encoding="utf-8") as f: f.write(initial_content)
+
+    with open(blog_file, "r", encoding="utf-8") as f: content = f.read()
+
+    new_card = f"""
+    <div class="bg-white rounded-2xl shadow-md overflow-hidden hover:scale-[1.02] transition-all">
+        <img src="{img_url}" class="w-full h-48 object-cover">
+        <div class="p-4">
+            <span class="text-xs text-blue-600 font-bold">{today}</span>
+            <h3 class="text-xl font-bold mt-2 mb-4">{title}</h3>
+            <a href="/{file_slug}" class="inline-block bg-blue-50 text-blue-600 px-4 py-2 rounded-lg font-bold text-sm">اقرأ المقال</a>
+        </div>
+    </div>
+    """
+    new_content = content.replace('', '\n' + new_card)
+    with open(blog_file, "w", encoding="utf-8") as f: f.write(new_content)
 
 if __name__ == "__main__":
-    generate_article()
+    generate_blog_post()
