@@ -8,8 +8,30 @@ from groq import Groq
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia-pro.vercel.app"
 
+def update_sitemap(file_slug):
+    sitemap_file = "sitemap.xml"
+    url = f"{DOMAIN}/{file_slug}"
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    
+    # القالب الأساسي لـ Sitemap
+    header = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    footer = '</urlset>'
+    url_entry = f'  <url>\n    <loc>{url}</loc>\n    <lastmod>{today}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n'
+
+    if not os.path.exists(sitemap_file):
+        # إنشاء ملف جديد
+        content = header + f'  <url><loc>{DOMAIN}/</loc><lastmod>{today}</lastmod><priority>1.0</priority></url>\n' + url_entry + footer
+        with open(sitemap_file, "w", encoding="utf-8") as f: f.write(content)
+    else:
+        # تحديث الملف الحالي
+        with open(sitemap_file, "r", encoding="utf-8") as f: 
+            content = f.read()
+        
+        if url not in content:
+            updated = content.replace(footer, url_entry + footer)
+            with open(sitemap_file, "w", encoding="utf-8") as f: f.write(updated)
+
 def format_content(text):
-    # تنسيق النص بأسلوب مقالات محترف
     text = re.sub(r'[^\u0600-\u06FF\s\d\.\:\-\!\?\(\)\*]', '', text)
     paragraphs = text.split('\n')
     formatted_html = ""
@@ -33,7 +55,7 @@ def update_blog_list(file_slug, title, image_url, category):
         <img src="{image_url}" class="w-full h-64 object-cover">
         <div class="p-8 text-right">
             <span class="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold">{category}</span>
-            <h3 class="text-xl font-black mt-4 mb-6 text-slate-900">{title}</h3>
+            <h3 class="text-xl font-black mt-4 mb-6 text-slate-900 h-14 overflow-hidden">{title}</h3>
             <a href="./{file_slug}" class="block w-full text-center bg-slate-900 text-white font-bold py-4 rounded-2xl hover:bg-blue-600 transition-all">إقرأ المقال ←</a>
         </div>
     </div>"""
@@ -44,7 +66,7 @@ def update_blog_list(file_slug, title, image_url, category):
             <nav class="bg-white p-6 shadow-sm sticky top-0 z-50 border-b">
                 <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
                     <h1 class="text-2xl font-black text-blue-600">TDEE ARABIA 🔥</h1>
-                    <input type="text" id="searchInput" onkeyup="searchPosts()" placeholder="إبحث عن مقال..." class="w-full md:w-96 px-5 py-3 rounded-2xl border border-slate-200 outline-none text-right focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="searchInput" onkeyup="searchPosts()" placeholder="إبحث عن مقال..." class="w-full md:w-96 px-5 py-3 rounded-2xl border border-slate-200 outline-none text-right">
                 </div>
             </nav>
             <main class="max-w-7xl mx-auto px-6 py-12">
@@ -72,14 +94,14 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    img_keywords = ["gym", "fitness", "workout", "protein", "muscle"]
-    topics = {"تنشيف": "أسرار التنشيف العضلي", "تضخيم": "دليل التضخيم الشامل", "تغذية": "أفضل وجبات قبل التمرين"}
+    img_keywords = ["gym", "workout", "protein", "fitness"]
+    topics = {"تنشيف": "أسرار التنشيف", "تضخيم": "دليل التضخيم", "تغذية": "أكل صحي"}
     cat = random.choice(list(topics.keys()))
     title = topics[cat] + f" {random.randint(2025, 2026)}"
     
     try:
         response = client.chat.completions.create(
-            messages=[{"role": "user", "content": f"اكتب مقال SEO رياضي مطول جدا بالعربية عن {title}"}],
+            messages=[{"role": "user", "content": f"اكتب مقال SEO رياضي بالعربية عن {title}"}],
             model="llama-3.3-70b-versatile"
         )
         body = format_content(response.choices[0].message.content)
@@ -88,19 +110,18 @@ def generate_post():
         
         full_html = f"""<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:'Cairo', sans-serif;}}</style></head>
         <body class="bg-slate-50">
-            <article class="max-w-4xl mx-auto py-16 px-6 bg-white shadow-sm min-h-screen">
-                <a href="./blog.html" class="text-blue-600 font-bold mb-8 inline-block hover:underline">← العودة للمدونة</a>
-                <img src="{img}" class="w-full h-96 object-cover rounded-3xl shadow-lg mb-12 border-4 border-white">
-                <h1 class="text-4xl md:text-5xl font-black mb-10 text-slate-900 leading-tight">{title}</h1>
-                <div class="blog-content">
-                    {body}
-                </div>
+            <article class="max-w-4xl mx-auto py-16 px-6 bg-white min-h-screen shadow-sm rounded-3xl mt-10">
+                <a href="./blog.html" class="text-blue-600 font-bold mb-8 inline-block underline">← العودة للمدونة</a>
+                <img src="{img}" class="w-full h-96 object-cover rounded-3xl mb-12 shadow-lg">
+                <h1 class="text-4xl font-black mb-10 text-slate-900 leading-tight">{title}</h1>
+                <div>{body}</div>
             </article>
         </body></html>"""
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
         update_blog_list(slug, title, img, cat)
-        print(f"✅ Success: {slug}")
+        update_sitemap(slug) # استدعاء الـ Sitemap هنا
+        print(f"✅ تم إنشاء المقال والـ Sitemap: {slug}")
         
     except Exception as e: print(f"❌ Error: {e}")
 
