@@ -32,8 +32,9 @@ jobs:
           git config --global user.name "Mohamed-Admin"
           git config --global user.email "admin@tdee-arabia.com"
           git add .
-          git commit -m "🚀 Automated Update" || echo "No changes"
+          git commit -m "🚀 Automated Update [deploy]" || echo "No changes"
           git push origin main
+          sleep 10
 
       - name: Wake up Vercel
         run: |
