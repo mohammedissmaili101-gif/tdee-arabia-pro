@@ -26,6 +26,7 @@ def update_sitemap(file_slug):
             with open(sitemap_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def format_content(text):
+    # تنسيق "مجلة" بفقرات مريحة وعناوين بارزة
     text = re.sub(r'[^\u0600-\u06FF\s\d\.\:\-\!\?\(\)\*]', '', text)
     paragraphs = text.split('\n')
     formatted_html = ""
@@ -51,7 +52,7 @@ def update_blog_list(file_slug, title, image_url, category):
     new_card = f'''
     <div class="blog-card group bg-white rounded-[3rem] shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100 overflow-hidden" data-title="{title}">
         <div class="relative overflow-hidden">
-            <img src="{image_url}" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-700" alt="{title}" onerror="this.src='https://loremflickr.com/1200/800/fitness,gym'">
+            <img src="{image_url}" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-700">
             <div class="absolute top-6 right-6 bg-blue-600 text-white px-5 py-2 rounded-2xl text-xs font-black tracking-widest uppercase">{category}</div>
         </div>
         <div class="p-10 text-right">
@@ -74,44 +75,51 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    # خريطة الكلمات الدلالية لضمان صور احترافية لكل قسم
-    img_map = {
-        "تغذية": "healthy-food,nutrition,fitness-meal",
-        "تدريب": "gym,bodybuilding,workout-professional",
-        "عقلية": "motivation,fitness-mindset,success"
+    # الأقسام وكلمات الصور المرتبطة بها لضمان التوافق التام
+    categories_data = {
+        "تغذية": "healthy-food-nutrition",
+        "تدريب": "gym-workout-bodybuilding",
+        "عقلية": "fitness-motivation-success"
     }
     
-    # اختيار قسم عشوائي
-    categories_list = list(img_map.keys())
-    cat = random.choice(categories_list)
-    
-    # لجعل المواضيع "لا نهائية"، نطلب من الذكاء الاصطناعي توليد عنوان بناءً على القسم
+    cat = random.choice(list(categories_data.keys()))
+    img_keyword = categories_data[cat]
+
     try:
-        # طلب العنوان أولاً أو جعل الـ Prompt يولد كل شيء
+        # طلب المقال كامل مع العنوان في طلب واحد
+        # حددنا للـ AI أن يضع العنوان في السطر الأول لسهولة استخراجه
+        prompt = (f"أنت خبير في كمال الأجسام واللياقة البدنية. اكتب مقالاً كاملاً ومفصلاً في قسم '{cat}'. "
+                  f"اجعل العنوان في أول سطر، ثم ابدأ المقال مباشرة. "
+                  f"المقال يجب أن يكون بأسلوب بشري مشوق، يحتوي على مقدمة، "
+                  f"عناوين فرعية محاطة بـ ** (مثال: **هذا عنوان فرعي**)، "
+                  f"قائمة نصائح عملية تبدأ بـ * ، وخاتمة ملهمة.")
+
         response = client.chat.completions.create(
-            messages=[{"role": "user", "content": f"أنت محرر مجلة لياقة بدنية محترف. اختر عنواناً مبتكراً وجديداً لمقال في قسم '{cat}' واكتب المقال كاملاً. المقال يجب أن يكون بأسلوب بشري، مشوق، فخم، ويحتوي على: مقدمة، عناوين فرعية بين **، قائمة نصائح، وخاتمة. اجعل النص طويلاً وغنياً بالمعلومات."}],
+            messages=[{"role": "user", "content": prompt}],
             model="llama-3.3-70b-versatile"
         )
         
-        full_text = response.choices[0].message.content
-        # استخراج أول سطر كعنوان (إذا كان الذكاء الاصطناعي وضعه في البداية) أو استخدامه بذكاء
-        lines = full_text.strip().split('\n')
+        full_text = response.choices[0].message.content.strip()
+        
+        # استخراج العنوان (أول سطر) والمحتوى (الباقي)
+        lines = full_text.split('\n')
         title = lines[0].replace('**', '').replace('#', '').strip()
-        body = format_content("\n".join(lines[1:]))
+        raw_body = "\n".join(lines[1:]).strip()
+        
+        # تنسيق المحتوى لـ HTML
+        body = format_content(raw_body)
         
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        # --- إصلاح الصور هنا ---
-        # استخدام كلمات دلالية مرتبطة بالقسم + جودة عالية + عشوائية (Lock) لضمان عدم التكرار
-        kw = img_map.get(cat, "fitness")
-        img_url = f"https://loremflickr.com/1200/800/{kw},workout/all?lock={random.randint(1, 10000)}"
+        # حل مشكلة الصور: استخدام رابط احترافي مع قفل عشوائي لضمان التجدد
+        img = f"https://loremflickr.com/1200/800/{img_keyword}/all?lock={random.randint(1,20000)}"
         
-        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif; scroll-behavior: smooth;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img_url}" alt="{title}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200" onerror="this.src='https://loremflickr.com/1200/800/fitness,gym'"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
+        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
-        update_blog_list(slug, title, img_url, cat)
+        update_blog_list(slug, title, img, cat)
         update_sitemap(slug)
-        print(f"🚀 Published: {slug} | Topic: {title} | Image Keywords: {kw}")
+        print(f"🚀 Published: {slug} | Title: {title}")
         
     except Exception as e: 
         print(f"❌ Error: {e}")
