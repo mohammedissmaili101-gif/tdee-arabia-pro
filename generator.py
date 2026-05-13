@@ -2,48 +2,11 @@ import os
 import random
 import datetime
 import re
-import requests
 from groq import Groq
 
 # الإعدادات
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
-PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")  # حطها في environment variables
 DOMAIN = "https://tdee-arabia-pro.vercel.app"
-
-TOPIC_IMAGES = {
-    "أفضل 5 مكملات للضخامة العضلية":        ["protein powder supplements", "muscle building supplements", "gym supplements"],
-    "نظام غذائي لحرق الدهون بدون حرمان":    ["healthy diet food", "fat loss meal", "clean eating"],
-    "وجبات اقتصادية غنية بالبروتين":         ["meal prep chicken", "high protein food", "bodybuilding meal"],
-    "تشريح عضلات الصدر: الدليل الشامل":      ["chest workout bench press", "bodybuilder chest", "pectoral muscles"],
-    "أقوى تمارين الأرجل للمحترفين":           ["leg day squat", "powerlifting legs", "leg press workout"],
-    "كيف تزيد من قوة قبضتك":                 ["grip strength training", "forearm workout", "hand strength gym"],
-    "سيكولوجية الاستمرار في الجيم":           ["gym motivation fitness", "workout mindset", "fitness discipline"],
-    "كيف تتغلب على الخمول الصباحي":          ["morning workout gym", "early fitness training", "morning exercise"],
-}
-
-def get_image_url(title):
-    """يجيب صورة Pexels عالية الجودة مرتبطة بالموضوع"""
-    keywords = TOPIC_IMAGES.get(title, ["gym workout fitness"])
-    query = random.choice(keywords)
-    
-    try:
-        response = requests.get(
-            "https://api.pexels.com/v1/search",
-            headers={"Authorization": PEXELS_API_KEY},
-            params={"query": query, "per_page": 15, "orientation": "landscape"},
-            timeout=10
-        )
-        data = response.json()
-        if data.get("photos"):
-            photo = random.choice(data["photos"])
-            return photo["src"]["large2x"]  # جودة عالية جداً 1920px
-    except Exception as e:
-        print(f"⚠️ Pexels error: {e}")
-    
-    # Fallback: Picsum لو فشل Pexels
-    return f"https://picsum.photos/seed/{random.randint(1,9999)}/1200/800"
-
-# ============================================================
 
 def update_sitemap(file_slug):
     sitemap_file = "sitemap.xml"
@@ -88,7 +51,7 @@ def update_blog_list(file_slug, title, image_url, category):
     new_card = f'''
     <div class="blog-card group bg-white rounded-[3rem] shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100 overflow-hidden" data-title="{title}">
         <div class="relative overflow-hidden">
-            <img src="{image_url}" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-700">
+            <img src="{image_url}" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-700" alt="{title}" onerror="this.src='https://loremflickr.com/1200/800/fitness,gym'">
             <div class="absolute top-6 right-6 bg-blue-600 text-white px-5 py-2 rounded-2xl text-xs font-black tracking-widest uppercase">{category}</div>
         </div>
         <div class="p-10 text-right">
@@ -111,33 +74,47 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    categories = {
-        "تغذية": ["أفضل 5 مكملات للضخامة العضلية", "نظام غذائي لحرق الدهون بدون حرمان", "وجبات اقتصادية غنية بالبروتين"],
-        "تدريب": ["تشريح عضلات الصدر: الدليل الشامل", "أقوى تمارين الأرجل للمحترفين", "كيف تزيد من قوة قبضتك"],
-        "عقلية": ["سيكولوجية الاستمرار في الجيم", "كيف تتغلب على الخمول الصباحي"]
+    # خريطة الكلمات الدلالية لضمان صور احترافية لكل قسم
+    img_map = {
+        "تغذية": "healthy-food,nutrition,fitness-meal",
+        "تدريب": "gym,bodybuilding,workout-professional",
+        "عقلية": "motivation,fitness-mindset,success"
     }
     
-    cat = random.choice(list(categories.keys()))
-    title = random.choice(categories[cat])
+    # اختيار قسم عشوائي
+    categories_list = list(img_map.keys())
+    cat = random.choice(categories_list)
     
+    # لجعل المواضيع "لا نهائية"، نطلب من الذكاء الاصطناعي توليد عنوان بناءً على القسم
     try:
+        # طلب العنوان أولاً أو جعل الـ Prompt يولد كل شيء
         response = client.chat.completions.create(
-            messages=[{"role": "user", "content": f"اكتب مقال مجلة رياضية احترافي جدا وبأسلوب بشري مشوق عن {title}. المقال يجب أن يحتوي على: مقدمة قوية، عناوين فرعية بين **، قائمة نصائح عملية، وخاتمة ملهمة. تجنب التكرار واستخدم لغة عربية سليمة ولكن قريبة من القارئ."}],
+            messages=[{"role": "user", "content": f"أنت محرر مجلة لياقة بدنية محترف. اختر عنواناً مبتكراً وجديداً لمقال في قسم '{cat}' واكتب المقال كاملاً. المقال يجب أن يكون بأسلوب بشري، مشوق، فخم، ويحتوي على: مقدمة، عناوين فرعية بين **، قائمة نصائح، وخاتمة. اجعل النص طويلاً وغنياً بالمعلومات."}],
             model="llama-3.3-70b-versatile"
         )
-        body = format_content(response.choices[0].message.content)
+        
+        full_text = response.choices[0].message.content
+        # استخراج أول سطر كعنوان (إذا كان الذكاء الاصطناعي وضعه في البداية) أو استخدامه بذكاء
+        lines = full_text.strip().split('\n')
+        title = lines[0].replace('**', '').replace('#', '').strip()
+        body = format_content("\n".join(lines[1:]))
+        
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        # 🖼️ صورة Pexels مرتبطة بالموضوع
-        img = get_image_url(title)
+        # --- إصلاح الصور هنا ---
+        # استخدام كلمات دلالية مرتبطة بالقسم + جودة عالية + عشوائية (Lock) لضمان عدم التكرار
+        kw = img_map.get(cat, "fitness")
+        img_url = f"https://loremflickr.com/1200/800/{kw},workout/all?lock={random.randint(1, 10000)}"
         
-        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
+        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif; scroll-behavior: smooth;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img_url}" alt="{title}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200" onerror="this.src='https://loremflickr.com/1200/800/fitness,gym'"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
-        update_blog_list(slug, title, img, cat)
+        update_blog_list(slug, title, img_url, cat)
         update_sitemap(slug)
-        print(f"🚀 Published: {slug}")
-    except Exception as e: print(f"❌ Error: {e}")
+        print(f"🚀 Published: {slug} | Topic: {title} | Image Keywords: {kw}")
+        
+    except Exception as e: 
+        print(f"❌ Error: {e}")
 
 if __name__ == "__main__":
     generate_post()
