@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{font-family:"Cairo", sans-serif;scroll-behavior:smooth;} .blog-card{transition: transform 0.3s ease;} .blog-card:hover{transform: translateY(-10px);}</style></head><body class="bg-slate-50"><nav class="bg-white/80 backdrop-blur-md p-8 shadow-sm border-b sticky top-0 z-50"><div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6"><div class="text-3xl font-black tracking-tighter text-slate-900">TDEE <span class="text-blue-600 italic">ARABIA</span></div><input type="text" id="searchInput" onkeyup="searchPosts()" placeholder="إبحث عن أسرار اللياقة..." class="w-full md:w-96 px-8 py-4 rounded-[2rem] border-2 border-slate-100 outline-none focus:border-blue-600 transition-all text-right shadow-inner"></div></nav><header class="py-20 text-center bg-white"><h2 class="text-6xl font-black text-slate-900 mb-4">المجلة الرياضية الأولى</h2><p class="text-slate-500 text-xl font-medium">دليلك اليومي للتطوير البدني والذهني</p></header><main class="max-w-7xl mx-auto px-8 py-12"><div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">HERE_IS_THE_LIST_MARKER
+    <div class="blog-card group bg-white rounded-[3rem] shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100 overflow-hidden" data-title="كيفية تحسين جودة النوم: الدليل العلمي الشامل">
+        <div class="relative overflow-hidden">
+            <img src="https://loremflickr.com/1280/720/bodybuilder-training-intense/all?lock=204" class="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-700">
+            <div class="absolute top-6 right-6 bg-blue-600 text-white px-4 py-2 rounded-2xl text-xs font-black tracking-widest uppercase">أسلوب حياة</div>
+        </div>
+        <div class="p-10 text-right">
+            <div class="flex justify-end gap-4 text-slate-400 text-xs mb-4 font-bold uppercase">
+                <span>• 5 دقائق قراءة</span>
+                <span>بواسطة فريق TDEE</span>
+            </div>
+            <h3 class="text-2xl font-black mb-6 text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">كيفية تحسين جودة النوم: الدليل العلمي الشامل</h3>
+            <a href="https://tdee-arabia-pro.vercel.app/article-834657.html" class="inline-flex items-center gap-2 text-blue-600 font-black text-sm uppercase tracking-wider group-hover:gap-4 transition-all">إقرأ المزيد <span class="text-xl">←</span></a>
+        </div>
+    </div></div></main><script>function searchPosts() { let input = document.getElementById("searchInput").value.toLowerCase(); let cards = document.querySelectorAll(".blog-card"); cards.forEach(card => { let title = card.getAttribute("data-title").toLowerCase(); card.style.display = title.includes(input) ? "block" : "none"; }); }</script></body></html>
