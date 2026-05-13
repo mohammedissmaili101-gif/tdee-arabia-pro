@@ -8,6 +8,30 @@ from groq import Groq
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 DOMAIN = "https://tdee-arabia-pro.vercel.app"
 
+# ============================================================
+# 🖼️ خريطة الصور: كل موضوع له كلمات مفتاحية خاصة على Unsplash
+# ============================================================
+TOPIC_IMAGES = {
+    "أفضل 5 مكملات للضخامة العضلية":        ["supplements", "protein-powder", "muscle-growth"],
+    "نظام غذائي لحرق الدهون بدون حرمان":    ["healthy-food", "diet-meal", "fat-loss-nutrition"],
+    "وجبات اقتصادية غنية بالبروتين":         ["meal-prep", "chicken-meal", "high-protein-food"],
+    "تشريح عضلات الصدر: الدليل الشامل":      ["chest-workout", "bench-press", "bodybuilder-chest"],
+    "أقوى تمارين الأرجل للمحترفين":           ["leg-day", "squat-workout", "powerlifting-legs"],
+    "كيف تزيد من قوة قبضتك":                 ["grip-strength", "forearm-workout", "hand-strength"],
+    "سيكولوجية الاستمرار في الجيم":           ["gym-motivation", "fitness-mindset", "workout-discipline"],
+    "كيف تتغلب على الخمول الصباحي":          ["morning-workout", "early-gym", "fitness-morning"],
+}
+
+def get_image_url(title):
+    """يجيب صورة Unsplash عالية الجودة مرتبطة بالموضوع"""
+    keywords = TOPIC_IMAGES.get(title, ["fitness", "gym", "workout"])
+    keyword = random.choice(keywords)
+    # Unsplash Source: صور مجانية عالية الجودة بدون API key
+    seed = random.randint(1, 9999)
+    return f"https://source.unsplash.com/1200x800/?{keyword}&sig={seed}"
+
+# ============================================================
+
 def update_sitemap(file_slug):
     sitemap_file = "sitemap.xml"
     url = f"{DOMAIN}/{file_slug}"
@@ -26,7 +50,6 @@ def update_sitemap(file_slug):
             with open(sitemap_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def format_content(text):
-    # تنسيق "مجلة" بفقرات مريحة وعناوين بارزة
     text = re.sub(r'[^\u0600-\u06FF\s\d\.\:\-\!\?\(\)\*]', '', text)
     paragraphs = text.split('\n')
     formatted_html = ""
@@ -65,7 +88,6 @@ def update_blog_list(file_slug, title, image_url, category):
         </div>
     </div>'''
     
-    # ... (نفس منطق الحفظ السابق لملف blog.html)
     if not os.path.exists(blog_file):
         initial_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}} .blog-card{{transition: transform 0.3s ease;}} .blog-card:hover{{transform: translateY(-8px);}}</style></head><body class="bg-slate-50"><nav class="bg-white/80 backdrop-blur-md p-8 shadow-sm border-b sticky top-0 z-50"><div class="max-w-7xl mx-auto flex justify-between items-center"><h1 class="text-3xl font-black tracking-tighter text-slate-900">TDEE <span class="text-blue-600 italic">ARABIA</span></h1><input type="text" id="searchInput" onkeyup="searchPosts()" placeholder="إبحث في المجلة..." class="w-72 px-6 py-4 rounded-[2rem] border-2 border-slate-100 outline-none focus:border-blue-600 transition-all text-right shadow-inner"></div></nav><main class="max-w-7xl mx-auto px-8 py-20"><div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 text-right">{marker}{new_card}</div></main><script>function searchPosts() {{ let input = document.getElementById("searchInput").value.toLowerCase(); let cards = document.querySelectorAll(".blog-card"); cards.forEach(card => {{ let title = card.getAttribute("data-title").toLowerCase(); card.style.display = title.includes(input) ? "block" : "none"; }}); }}</script></body></html>'''
         with open(blog_file, "w", encoding="utf-8") as f: f.write(initial_html)
@@ -76,8 +98,6 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    # كلمات دقيقة جدا للصور الفخمة
-    img_queries = ["aesthetic-bodybuilder-gym", "healthy-fitness-food-hd", "professional-gym-workout", "sports-nutrition-magazine"]
     categories = {
         "تغذية": ["أفضل 5 مكملات للضخامة العضلية", "نظام غذائي لحرق الدهون بدون حرمان", "وجبات اقتصادية غنية بالبروتين"],
         "تدريب": ["تشريح عضلات الصدر: الدليل الشامل", "أقوى تمارين الأرجل للمحترفين", "كيف تزيد من قوة قبضتك"],
@@ -95,8 +115,8 @@ def generate_post():
         body = format_content(response.choices[0].message.content)
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        # قفل (lock) عشوائي لضمان عدم تكرار الصور في كل عملية نشر
-        img = f"https://loremflickr.com/1200/800/{random.choice(img_queries)}/all?lock={random.randint(1,5000)}"
+        # 🖼️ الصورة مرتبطة بالموضوع من Unsplash
+        img = get_image_url(title)
         
         full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
         
