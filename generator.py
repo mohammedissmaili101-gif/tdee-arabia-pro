@@ -79,7 +79,6 @@ def generate_post():
     cat = random.choice(categories_keys)
     
     try:
-        # تعديل البرومبت لضمان جلب كلمات دلالية بصرية وحقيقية متعلقة بالجيم فقط
         prompt = (f"أنت خبير في كمال الأجسام واللياقة البدنية. اكتب مقالاً كاملاً ومفصلاً في قسم '{cat}'. "
                   f"اجعل العنوان في أول سطر. ثم ابدأ المقال مباشرة. "
                   f"المقال يجب أن يكون بأسلوب بشري مشوق، يحتوي على مقدمة، عناوين فرعية بـ **، قائمة نصائح بـ * ، وخاتمة. "
@@ -95,35 +94,32 @@ def generate_post():
         lines = [line for line in full_text.split('\n') if line.strip()]
         
         title = lines[0].replace('**', '').replace('#', '').strip()
-        # الكلمات الدلالية للصورة موجودة في آخر سطر
         img_keywords = lines[-1].strip().lower().replace(" ", "")
-        # جسم المقال هو كل شيء بين العنوان والكلمات الدلالية
         raw_body = "\n".join(lines[1:-1]).strip()
         
         body = format_content(raw_body)
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        # ------------------- إصلاح الصور -------------------
-        # قائمة كلمات مفتاحية آمنة للرياضة (لن نغير أبداً منطق img_keywards بل سنضمّنها)
-        safe_fallback = ["bodybuilding", "gym", "fitness", "muscle", "workout", "dumbbell"]
-        # تنظيف الكلمات الدلالية من الأحرف الغريبة
+        # ---------- التعديل الأول: إصلاح الصور (استبدال loremflickr بـ unsplash) ----------
+        # تنظيف الكلمات الدلالية من الأحرف غير المسموحة
         clean_keywords = re.sub(r'[^a-zA-Z,]', '', img_keywords) if img_keywords else ""
         if clean_keywords and len(clean_keywords) > 3:
-            # نأخذ أول 20 حرفاً فقط لئلا تطول
             final_keywords = f"bodybuilding,gym,{clean_keywords[:30]}"
         else:
-            final_keywords = f"bodybuilding,gym,{random.choice(safe_fallback)}"
-        # استخدام source.unsplash.com (مجاني، لا يحتاج مفتاح، وصور حقيقية)
+            final_keywords = "bodybuilding,gym,fitness"
+        # استخدام Unsplash (صور حقيقية وليس قطط)
         img = f"https://source.unsplash.com/1200x800/?{final_keywords}&random={random.randint(1,99999)}"
-        # --------------------------------------------------
+        # ---------------------------------------------------------------------------------
         
+        # ---------- التعديل الثاني: إضافة رابط العودة للصفحة الرئيسية ----------
+        # السطر الذي يحتوي على الرابط القديم أصبح الآن يحتوي على رابطين
         full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p>
-            <!-- إضافة الرابط الجديد للصفحة الرئيسية للأداة -->
-            <div class="flex flex-wrap justify-center gap-4">
-                <a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a>
-                <a href="{DOMAIN}/" class="inline-block bg-green-600 px-12 py-5 rounded-3xl font-black hover:bg-green-700 transition-all text-xl">الرجوع للأداة الرئيسية ←</a>
-            </div>
+        <div class="flex flex-wrap justify-center gap-4">
+            <a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a>
+            <a href="{DOMAIN}/" class="inline-block bg-green-600 px-12 py-5 rounded-3xl font-black hover:bg-green-700 transition-all text-xl">الرجوع للأداة الرئيسية ←</a>
+        </div>
         </div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
+        # --------------------------------------------------------------------
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
         update_blog_list(slug, title, img, cat)
