@@ -2,7 +2,7 @@ import os
 import random
 import datetime
 import re
-import requests
+import requests # ضروري تزيدها ف ملف requirements.txt
 from groq import Groq
 
 # الإعدادات
@@ -13,16 +13,16 @@ DOMAIN = "https://tdee-arabia-pro.vercel.app"
 def get_pexels_image(query):
     """جلب صورة احترافية من Pexels مرتبطة بالموضوع"""
     headers = {"Authorization": PEXELS_API_KEY}
-    url = f"https://api.pexels.com/v1/search?query={query}&per_page=15&orientation=landscape"
+    # كنزيدو كلمة fitness باش نضمنو الصور تكون رياضية
+    url = f"https://api.pexels.com/v1/search?query={query}+fitness&per_page=10&orientation=landscape"
     try:
         response = requests.get(url, headers=headers)
         data = response.json()
         if data.get("photos"):
-            # اختيار صورة عشوائية من النتائج الأولى لضمان التنوع
             return random.choice(data["photos"])["src"]["large2x"]
     except Exception as e:
         print(f"Pexels Error: {e}")
-    # صورة احتياطية في حالة فشل الـ API
+    # صورة احتياطية في حالة أي مشكل
     return "https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg"
 
 def update_sitemap(file_slug):
@@ -81,7 +81,10 @@ def update_blog_list(file_slug, title, image_url, category):
         </div>
     </div>'''
     
-    if os.path.exists(blog_file):
+    if not os.path.exists(blog_file):
+        initial_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}} .blog-card{{transition: transform 0.3s ease;}} .blog-card:hover{{transform: translateY(-8px);}}</style></head><body class="bg-slate-50"><nav class="bg-white/80 backdrop-blur-md p-8 shadow-sm border-b sticky top-0 z-50"><div class="max-w-7xl mx-auto flex justify-between items-center"><h1 class="text-3xl font-black tracking-tighter text-slate-900">TDEE <span class="text-blue-600 italic">ARABIA</span></h1><input type="text" id="searchInput" onkeyup="searchPosts()" placeholder="إبحث في المجلة..." class="w-72 px-6 py-4 rounded-[2rem] border-2 border-slate-100 outline-none focus:border-blue-600 transition-all text-right shadow-inner"></div></nav><main class="max-w-7xl mx-auto px-8 py-20"><div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 text-right">{marker}{new_card}</div></main><script>function searchPosts() {{ let input = document.getElementById("searchInput").value.toLowerCase(); let cards = document.querySelectorAll(".blog-card"); cards.forEach(card => {{ let title = card.getAttribute("data-title").toLowerCase(); card.style.display = title.includes(input) ? "block" : "none"; }}); }}</script></body></html>'''
+        with open(blog_file, "w", encoding="utf-8") as f: f.write(initial_html)
+    else:
         with open(blog_file, "r", encoding="utf-8") as f: content = f.read()
         if marker in content:
             updated = content.replace(marker, f"{marker}\n{new_card}")
@@ -90,40 +93,34 @@ def update_blog_list(file_slug, title, image_url, category):
 def generate_post():
     # نظام توليد مواضيع لا نهائي
     themes = {
-        "كمال أجسام": ["تضخيم عضلة الصدر", "تنشيف البطن", "تقوية الظهر", "تمارين الكتاف", "بناء الأرجل"],
-        "تغذية": ["بروتين طبيعي", "وجبات الكيتو", "الصيام المتقطع", "كربوهيدرات معقدة", "مكملات الكرياتين"],
-        "أسلوب حياة": ["تحسين النوم للرياضيين", "تجنب الإصابات", "التحفيز الذهني", "تمارين التمدد", "HIIT للقلب"]
+        "تغذية": ["بروتين", "كيتو", "حرق دهون", "مكملات", "وجبات صحية"],
+        "تدريب": ["عضلات الصدر", "تنشيف", "سكوات", "كارديو", "قوة بدنية"],
+        "عقلية": ["استمرار", "تحفيز", "نوم", "راحة", "تركيز"]
     }
-    
-    modifiers = ["دليل شامل للمبتدئين", "أسرار المحترفين", "أخطاء شائعة تجنبها", "أفضل الطرق العلمية لـ", "كيفية تطوير"]
+    modifiers = ["دليل شامل عن", "أسرار", "أفضل طرق", "أخطاء تجنبها في", "كيفية تطوير"]
     
     cat = random.choice(list(themes.keys()))
-    base_topic = random.choice(themes[cat])
-    modifier = random.choice(modifiers)
-    title = f"{modifier} {base_topic}"
-    
-    # تحديد الكلمة البحثية للصور بناءً على الموضوع
-    search_query = base_topic.replace(" ", "+") + "+fitness"
+    base = random.choice(themes[cat])
+    title = f"{random.choice(modifiers)} {base}"
     
     try:
         response = client.chat.completions.create(
-            messages=[{"role": "user", "content": f"اكتب مقال مجلة رياضية احترافي جدا وبأسلوب بشري مشوق عن {title}. المقال يجب أن يحتوي على: مقدمة قوية، عناوين فرعية بين **، قائمة نصائح عملية، وخاتمة ملهمة. استخدم لغة عربية سليمة ومحفزة."}],
+            messages=[{"role": "user", "content": f"اكتب مقال مجلة رياضية احترافي جدا وبأسلوب بشري مشوق عن {title}. المقال يجب أن يحتوي على: مقدمة قوية، عناوين فرعية بين **، قائمة نصائح عملية، وخاتمة ملهمة. تجنب التكرار واستخدم لغة عربية سليمة."}],
             model="llama-3.3-70b-versatile"
         )
-        
         body = format_content(response.choices[0].message.content)
-        img = get_pexels_image(search_query)
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat}</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-tight text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article></body></html>'''
+        # جلب صورة مرتبطة بالموضوع من Pexels
+        img = get_pexels_image(base)
+        
+        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
         update_blog_list(slug, title, img, cat)
         update_sitemap(slug)
-        print(f"🚀 Published via Pexels: {slug}")
-        
-    except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"🚀 Published: {slug}")
+    except Exception as e: print(f"❌ Error: {e}")
 
 if __name__ == "__main__":
     generate_post()
