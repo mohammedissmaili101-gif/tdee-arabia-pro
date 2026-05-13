@@ -2,33 +2,46 @@ import os
 import random
 import datetime
 import re
+import requests
 from groq import Groq
 
 # الإعدادات
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")  # حطها في environment variables
 DOMAIN = "https://tdee-arabia-pro.vercel.app"
 
-# ============================================================
-# 🖼️ خريطة الصور: كل موضوع له كلمات مفتاحية خاصة على Unsplash
-# ============================================================
 TOPIC_IMAGES = {
-    "أفضل 5 مكملات للضخامة العضلية":        ["supplements", "protein-powder", "muscle-growth"],
-    "نظام غذائي لحرق الدهون بدون حرمان":    ["healthy-food", "diet-meal", "fat-loss-nutrition"],
-    "وجبات اقتصادية غنية بالبروتين":         ["meal-prep", "chicken-meal", "high-protein-food"],
-    "تشريح عضلات الصدر: الدليل الشامل":      ["chest-workout", "bench-press", "bodybuilder-chest"],
-    "أقوى تمارين الأرجل للمحترفين":           ["leg-day", "squat-workout", "powerlifting-legs"],
-    "كيف تزيد من قوة قبضتك":                 ["grip-strength", "forearm-workout", "hand-strength"],
-    "سيكولوجية الاستمرار في الجيم":           ["gym-motivation", "fitness-mindset", "workout-discipline"],
-    "كيف تتغلب على الخمول الصباحي":          ["morning-workout", "early-gym", "fitness-morning"],
+    "أفضل 5 مكملات للضخامة العضلية":        ["protein powder supplements", "muscle building supplements", "gym supplements"],
+    "نظام غذائي لحرق الدهون بدون حرمان":    ["healthy diet food", "fat loss meal", "clean eating"],
+    "وجبات اقتصادية غنية بالبروتين":         ["meal prep chicken", "high protein food", "bodybuilding meal"],
+    "تشريح عضلات الصدر: الدليل الشامل":      ["chest workout bench press", "bodybuilder chest", "pectoral muscles"],
+    "أقوى تمارين الأرجل للمحترفين":           ["leg day squat", "powerlifting legs", "leg press workout"],
+    "كيف تزيد من قوة قبضتك":                 ["grip strength training", "forearm workout", "hand strength gym"],
+    "سيكولوجية الاستمرار في الجيم":           ["gym motivation fitness", "workout mindset", "fitness discipline"],
+    "كيف تتغلب على الخمول الصباحي":          ["morning workout gym", "early fitness training", "morning exercise"],
 }
 
 def get_image_url(title):
-    """يجيب صورة Unsplash عالية الجودة مرتبطة بالموضوع"""
-    keywords = TOPIC_IMAGES.get(title, ["fitness", "gym", "workout"])
-    keyword = random.choice(keywords)
-    # Unsplash Source: صور مجانية عالية الجودة بدون API key
-    seed = random.randint(1, 9999)
-    return f"https://source.unsplash.com/1200x800/?{keyword}&sig={seed}"
+    """يجيب صورة Pexels عالية الجودة مرتبطة بالموضوع"""
+    keywords = TOPIC_IMAGES.get(title, ["gym workout fitness"])
+    query = random.choice(keywords)
+    
+    try:
+        response = requests.get(
+            "https://api.pexels.com/v1/search",
+            headers={"Authorization": PEXELS_API_KEY},
+            params={"query": query, "per_page": 15, "orientation": "landscape"},
+            timeout=10
+        )
+        data = response.json()
+        if data.get("photos"):
+            photo = random.choice(data["photos"])
+            return photo["src"]["large2x"]  # جودة عالية جداً 1920px
+    except Exception as e:
+        print(f"⚠️ Pexels error: {e}")
+    
+    # Fallback: Picsum لو فشل Pexels
+    return f"https://picsum.photos/seed/{random.randint(1,9999)}/1200/800"
 
 # ============================================================
 
@@ -115,7 +128,7 @@ def generate_post():
         body = format_content(response.choices[0].message.content)
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        # 🖼️ الصورة مرتبطة بالموضوع من Unsplash
+        # 🖼️ صورة Pexels مرتبطة بالموضوع
         img = get_image_url(title)
         
         full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
