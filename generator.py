@@ -43,7 +43,7 @@ def format_content(text):
             formatted_html += f'<p class="text-xl text-slate-700 leading-loose mb-10 text-right font-light bg-white p-2">{p}</p>'
     return formatted_html
 
-def update_blog_list(file_slug, title, image_url, category):
+def update_blog_list(file_slug, title, category):
     blog_file = "blog.html"
     marker = 'HERE_IS_THE_LIST_MARKER'
     full_post_url = f"{DOMAIN}/{file_slug}"
@@ -51,15 +51,12 @@ def update_blog_list(file_slug, title, image_url, category):
     
     new_card = f'''
     <div class="blog-card group bg-white rounded-[3rem] shadow-sm hover:shadow-2xl transition-all duration-500 border border-slate-100 overflow-hidden" data-title="{title}">
-        <div class="relative overflow-hidden">
-            <img src="{image_url}" class="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-700">
-            <div class="absolute top-6 right-6 bg-blue-600 text-white px-5 py-2 rounded-2xl text-xs font-black tracking-widest uppercase">{category}</div>
-        </div>
         <div class="p-10 text-right">
             <div class="flex justify-end gap-4 text-slate-400 text-xs mb-4 font-bold">
                 <span>• {read_time} MIN READ</span>
                 <span>MAGAZINE EDITION</span>
             </div>
+            <div class="inline-block bg-blue-600 text-white px-4 py-1 rounded-xl text-[10px] font-black mb-4 uppercase">{category}</div>
             <h3 class="text-2xl font-black mb-6 text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">{title}</h3>
             <a href="{full_post_url}" class="inline-flex items-center gap-2 text-blue-600 font-black text-sm uppercase tracking-wider group-hover:gap-4 transition-all underline underline-offset-8">إقرأ المقال الكامل ←</a>
         </div>
@@ -79,12 +76,9 @@ def generate_post():
     cat = random.choice(categories_keys)
     
     try:
-        # طلب كلمات دلالية مادية لضمان جودة الصور
         prompt = (f"أنت خبير في كمال الأجسام واللياقة البدنية. اكتب مقالاً كاملاً ومفصلاً في قسم '{cat}'. "
                   f"اجعل العنوان في أول سطر. ثم ابدأ المقال مباشرة. "
-                  f"المقال يجب أن يكون بأسلوب بشري مشوق، يحتوي على مقدمة، عناوين فرعية بـ **، قائمة نصائح بـ * ، وخاتمة. "
-                  f"في السطر الأخير تماماً، اكتب 3 كلمات إنجليزية فقط تصف 'صورة احترافية' مادية تناسب المقال "
-                  f"(مثال: dumbbells, muscular athlete, healthy food).")
+                  f"المقال يجب أن يكون بأسلوب بشري مشوق، يحتوي على مقدمة، عناوين فرعية بـ **، قائمة نصائح بـ * ، وخاتمة.")
 
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
@@ -95,19 +89,15 @@ def generate_post():
         lines = [line for line in full_text.split('\n') if line.strip()]
         
         title = lines[0].replace('**', '').replace('#', '').strip()
-        img_keywords = lines[-1].strip().lower().replace(" ", "")
-        raw_body = "\n".join(lines[1:-1]).strip()
+        raw_body = "\n".join(lines[1:]).strip()
         
         body = format_content(raw_body)
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        # الرابط المصلح لضمان عدم ظهور القطة
-        img = f"https://loremflickr.com/1200/800/fitness,bodybuilding,gym,{img_keywords}?lock={random.randint(1,99999)}"
-        
-        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><div class="flex flex-wrap justify-center gap-4"><a href="{DOMAIN}" class="inline-block bg-white text-slate-900 px-12 py-5 rounded-3xl font-black hover:bg-slate-100 transition-all text-xl">العودة للأداة</a><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 text-white px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
+        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><div class="flex flex-col md:flex-row gap-4 justify-center"><a href="{DOMAIN}" class="inline-block bg-white text-slate-900 px-12 py-5 rounded-3xl font-black hover:bg-slate-100 transition-all text-xl">العودة للأداة</a><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl text-white">العودة للمجلة</a></div></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
-        update_blog_list(slug, title, img, cat)
+        update_blog_list(slug, title, cat)
         update_sitemap(slug)
         print(f"🚀 Published: {slug} | Title: {title}")
         
