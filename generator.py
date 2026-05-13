@@ -10,40 +10,21 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
 DOMAIN = "https://tdee-arabia-pro.vercel.app"
 
-CATEGORIES = ["تغذية", "تدريب", "عقلية", "صحة", "تعافي"]
-
-def generate_topic(cat):
-    prompt = f"""أنت محرر مجلة رياضية عربية. اقترح موضوع مقال جديد وفريد في تصنيف "{cat}".
-أجب فقط بـ JSON بهذا الشكل بدون أي كلام آخر:
-{{
-  "title": "عنوان المقال بالعربية",
-  "img_keyword": "2-3 english words for pexels image search related to the topic"
-}}"""
-    r = client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model="llama-3.3-70b-versatile",
-        max_tokens=100
-    )
-    raw = r.choices[0].message.content.strip()
-    raw = re.sub(r'```json|```', '', raw).strip()
-    data = json.loads(raw)
-    return data["title"], data["img_keyword"]
-
 def get_image_url(keyword):
     try:
-        r = requests.get(
+        response = requests.get(
             "https://api.pexels.com/v1/search",
             headers={"Authorization": PEXELS_API_KEY},
             params={"query": keyword, "per_page": 15, "orientation": "landscape"},
             timeout=10
         )
-        photos = r.json().get("photos", [])
-        if photos:
-            return random.choice(photos)["src"]["large2x"]
+        data = response.json()
+        if data.get("photos"):
+            photo = random.choice(data["photos"])
+            return photo["src"]["large2x"]
     except Exception as e:
         print(f"⚠️ Pexels error: {e}")
-    seed = abs(hash(keyword)) % 9999
-    return f"https://picsum.photos/seed/{seed}/1200/800"
+    return f"https://picsum.photos/seed/{abs(hash(keyword)) % 9999}/1200/800"
 
 def update_sitemap(file_slug):
     sitemap_file = "sitemap.xml"
@@ -108,13 +89,28 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    cat = random.choice(CATEGORIES)
-    try:
-        title, img_keyword = generate_topic(cat)
-        print(f"📝 Topic: [{cat}] {title} | 🖼️ Image: {img_keyword}")
+    categories = ["تغذية", "تدريب", "عقلية", "صحة", "تعافي"]
+    cat = random.choice(categories)
 
+    # Groq يولّد العنوان والـ keyword تلقائياً — مواضيع لا نهائية
+    prompt = f"""أنت محرر مجلة رياضية عربية. اقترح موضوع مقال جديد وفريد في تصنيف "{cat}".
+أجب فقط بـ JSON بهذا الشكل بدون أي كلام آخر:
+{{"title": "عنوان المقال بالعربية", "img_keyword": "2-3 english words for pexels image search"}}"""
+
+    r = client.chat.completions.create(
+        messages=[{"role": "user", "content": prompt}],
+        model="llama-3.3-70b-versatile",
+        max_tokens=100
+    )
+    raw = re.sub(r'```json|```', '', r.choices[0].message.content.strip()).strip()
+    data = json.loads(raw)
+    title = data["title"]
+    img_keyword = data["img_keyword"]
+    print(f"📝 [{cat}] {title} | 🖼️ {img_keyword}")
+
+    try:
         response = client.chat.completions.create(
-            messages=[{"role": "user", "content": f"اكتب مقال مجلة رياضية احترافي جدا وبأسلوب بشري مشوق عن: {title}. المقال يجب أن يحتوي على: مقدمة قوية، عناوين فرعية بين **، قائمة نصائح عملية، وخاتمة ملهمة. تجنب التكرار واستخدم لغة عربية سليمة ولكن قريبة من القارئ."}],
+            messages=[{"role": "user", "content": f"اكتب مقال مجلة رياضية احترافي جدا وبأسلوب بشري مشوق عن {title}. المقال يجب أن يحتوي على: مقدمة قوية، عناوين فرعية بين **، قائمة نصائح عملية، وخاتمة ملهمة. تجنب التكرار واستخدم لغة عربية سليمة ولكن قريبة من القارئ."}],
             model="llama-3.3-70b-versatile"
         )
         body = format_content(response.choices[0].message.content)
