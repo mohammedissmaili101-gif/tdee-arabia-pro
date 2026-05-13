@@ -12,18 +12,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0 # مهم باش يقدّر يدير git push بلا مشاكل
-
+      
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
           
       - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install groq requests
+        run: pip install groq requests
       
       - name: Run Generator
         env:
@@ -36,17 +32,9 @@ jobs:
           git config --global user.name "Mohamed-Admin"
           git config --global user.email "admin@tdee-arabia.com"
           git add .
-          # كنزيدو هاد الشرط باش إلا ما كان حتى ملف جديد ميوقفش الـ Action بـ Error
-          if git diff --staged --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "🚀 Automated Update [deploy]"
-            git push origin main
-          fi
-          sleep 5
+          git commit -m "🚀 Automated Update" || echo "No changes"
+          git push origin main
 
       - name: Wake up Vercel
-        # هاد الخطوة غتخدم غير إلا كان عندك Deploy Hook من Vercel
-        if: success() && secrets.VERCEL_DEPLOY_HOOK != ''
         run: |
           curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK }}"
