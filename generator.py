@@ -66,7 +66,8 @@ def update_blog_list(file_slug, title, image_url, category):
     </div>'''
     
     if not os.path.exists(blog_file):
-        initial_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}} .blog-card{{transition: transform 0.3s ease;}} .blog-card:hover{{transform: translateY(-8px);}}</style></head><body class="bg-slate-50"><nav class="bg-white/80 backdrop-blur-md p-8 shadow-sm border-b sticky top-0 z-50"><div class="max-w-7xl mx-auto flex justify-between items-center"><h1 class="text-3xl font-black tracking-tighter text-slate-900">TDEE <span class="text-blue-600 italic">ARABIA</span></h1><input type="text" id="searchInput" onkeyup="searchPosts()" placeholder="إبحث في المجلة..." class="w-72 px-6 py-4 rounded-[2rem] border-2 border-slate-100 outline-none focus:border-blue-600 transition-all text-right shadow-inner"></div></nav><main class="max-w-7xl mx-auto px-8 py-20"><div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 text-right">{marker}{new_card}</div></main><script>function searchPosts() {{ let input = document.getElementById("searchInput").value.toLowerCase(); let cards = document.querySelectorAll(".blog-card"); cards.forEach(card => {{ let title = card.getAttribute("data-title").toLowerCase(); card.style.display = title.includes(input) ? "block" : "none"; }}); }}</script></body></html>'''
+        # ✅ تم إضافة زر "حاسبة TDEE" الذي يؤدي إلى الصفحة الرئيسية للأداة
+        initial_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}} .blog-card{{transition: transform 0.3s ease;}} .blog-card:hover{{transform: translateY(-8px);}}</style></head><body class="bg-slate-50"><nav class="bg-white/80 backdrop-blur-md p-8 shadow-sm border-b sticky top-0 z-50"><div class="max-w-7xl mx-auto flex justify-between items-center"><h1 class="text-3xl font-black tracking-tighter text-slate-900">TDEE <span class="text-blue-600 italic">ARABIA</span></h1><a href="{DOMAIN}" class="bg-blue-600 text-white px-6 py-2 rounded-full font-bold hover:bg-blue-700 transition shadow-md">حاسبة TDEE</a><input type="text" id="searchInput" onkeyup="searchPosts()" placeholder="إبحث في المجلة..." class="w-72 px-6 py-4 rounded-[2rem] border-2 border-slate-100 outline-none focus:border-blue-600 transition-all text-right shadow-inner"></div></nav><main class="max-w-7xl mx-auto px-8 py-20"><div id="blog-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 text-right">{marker}{new_card}</div></main><script>function searchPosts() {{ let input = document.getElementById("searchInput").value.toLowerCase(); let cards = document.querySelectorAll(".blog-card"); cards.forEach(card => {{ let title = card.getAttribute("data-title").toLowerCase(); card.style.display = title.includes(input) ? "block" : "none"; }}); }}</script></body></html>'''
         with open(blog_file, "w", encoding="utf-8") as f: f.write(initial_html)
     else:
         with open(blog_file, "r", encoding="utf-8") as f: content = f.read()
@@ -75,15 +76,23 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    categories_keys = ["تغذية", "تدريب", "عقلية"]
-    cat = random.choice(categories_keys)
+    # الأقسام وكلمات الصور المرتبطة بها لضمان التوافق التام
+    categories_data = {
+        "تغذية": "healthy-food-nutrition",
+        "تدريب": "gym-workout-bodybuilding",
+        "عقلية": "fitness-motivation-success"
+    }
     
+    cat = random.choice(list(categories_data.keys()))
+    img_keyword = categories_data[cat]
+
     try:
+        # طلب المقال كامل مع العنوان في طلب واحد
         prompt = (f"أنت خبير في كمال الأجسام واللياقة البدنية. اكتب مقالاً كاملاً ومفصلاً في قسم '{cat}'. "
-                  f"اجعل العنوان في أول سطر. ثم ابدأ المقال مباشرة. "
-                  f"المقال يجب أن يكون بأسلوب بشري مشوق، يحتوي على مقدمة، عناوين فرعية بـ **، قائمة نصائح بـ * ، وخاتمة. "
-                  f"في السطر الأخير تماماً، اكتب 3 كلمات إنجليزية فقط تصف 'صورة فوتوغرافية احترافية' داخل صالة الجيم أو لمعدات رياضية أو لاعب عضلات "
-                  f"تناسب المقال (تجنب الكلمات المعنوية، نريد أشياء ملموسة تُصوّر).")
+                  f"اجعل العنوان في أول سطر، ثم ابدأ المقال مباشرة. "
+                  f"المقال يجب أن يكون بأسلوب بشري مشوق، يحتوي على مقدمة، "
+                  f"عناوين فرعية محاطة بـ ** (مثال: **هذا عنوان فرعي**)، "
+                  f"قائمة نصائح عملية تبدأ بـ * ، وخاتمة ملهمة.")
 
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
@@ -91,40 +100,26 @@ def generate_post():
         )
         
         full_text = response.choices[0].message.content.strip()
-        lines = [line for line in full_text.split('\n') if line.strip()]
         
+        # استخراج العنوان (أول سطر) والمحتوى (الباقي)
+        lines = full_text.split('\n')
         title = lines[0].replace('**', '').replace('#', '').strip()
-        img_keywords = lines[-1].strip().lower().replace(" ", "")
-        raw_body = "\n".join(lines[1:-1]).strip()
+        raw_body = "\n".join(lines[1:]).strip()
         
+        # تنسيق المحتوى لـ HTML
         body = format_content(raw_body)
+        
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        # ---------- التعديل الأول: إصلاح الصور (استبدال loremflickr بـ unsplash) ----------
-        # تنظيف الكلمات الدلالية من الأحرف غير المسموحة
-        clean_keywords = re.sub(r'[^a-zA-Z,]', '', img_keywords) if img_keywords else ""
-        if clean_keywords and len(clean_keywords) > 3:
-            final_keywords = f"bodybuilding,gym,{clean_keywords[:30]}"
-        else:
-            final_keywords = "bodybuilding,gym,fitness"
-        # استخدام Unsplash (صور حقيقية وليس قطط)
-        img = f"https://source.unsplash.com/1200x800/?{final_keywords}&random={random.randint(1,99999)}"
-        # ---------------------------------------------------------------------------------
+        # ✅ حل مشكلة الصور: صورة فريدة لكل مقال، غير متكررة باستخدام Unsplash + رقم عشوائي ضخم
+        img = f"https://source.unsplash.com/1200x800/?{img_keyword}&{random.randint(1, 10**9)}"
         
-        # ---------- التعديل الثاني: إضافة رابط العودة للصفحة الرئيسية ----------
-        # السطر الذي يحتوي على الرابط القديم أصبح الآن يحتوي على رابطين
-        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p>
-        <div class="flex flex-wrap justify-center gap-4">
-            <a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a>
-            <a href="{DOMAIN}/" class="inline-block bg-green-600 px-12 py-5 rounded-3xl font-black hover:bg-green-700 transition-all text-xl">الرجوع للأداة الرئيسية ←</a>
-        </div>
-        </div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
-        # --------------------------------------------------------------------
+        full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
         update_blog_list(slug, title, img, cat)
         update_sitemap(slug)
-        print(f"🚀 Published: {slug} | Title: {title} | Image Tags: {img_keywords}")
+        print(f"🚀 Published: {slug} | Title: {title}")
         
     except Exception as e: 
         print(f"❌ Error: {e}")
