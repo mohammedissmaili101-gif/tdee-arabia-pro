@@ -75,24 +75,15 @@ def update_blog_list(file_slug, title, image_url, category):
             with open(blog_file, "w", encoding="utf-8") as f: f.write(updated)
 
 def generate_post():
-    # الأقسام وكلمات الصور المرتبطة بها لضمان التوافق التام
-    categories_data = {
-        "تغذية": "healthy-food-nutrition",
-        "تدريب": "gym-workout-bodybuilding",
-        "عقلية": "fitness-motivation-success"
-    }
+    categories_keys = ["تغذية", "تدريب", "عقلية"]
+    cat = random.choice(categories_keys)
     
-    cat = random.choice(list(categories_data.keys()))
-    img_keyword = categories_data[cat]
-
     try:
-        # طلب المقال كامل مع العنوان في طلب واحد
-        # حددنا للـ AI أن يضع العنوان في السطر الأول لسهولة استخراجه
+        # تعديل البرومبت ليقوم بابتكار الموضوع وإعطاء كلمات صور دقيقة في السطر الأخير
         prompt = (f"أنت خبير في كمال الأجسام واللياقة البدنية. اكتب مقالاً كاملاً ومفصلاً في قسم '{cat}'. "
-                  f"اجعل العنوان في أول سطر، ثم ابدأ المقال مباشرة. "
-                  f"المقال يجب أن يكون بأسلوب بشري مشوق، يحتوي على مقدمة، "
-                  f"عناوين فرعية محاطة بـ ** (مثال: **هذا عنوان فرعي**)، "
-                  f"قائمة نصائح عملية تبدأ بـ * ، وخاتمة ملهمة.")
+                  f"اجعل العنوان في أول سطر. ثم ابدأ المقال مباشرة. "
+                  f"المقال يجب أن يكون بأسلوب بشري مشوق، يحتوي على مقدمة، عناوين فرعية بـ **، قائمة نصائح بـ * ، وخاتمة. "
+                  f"في السطر الأخير تماماً، اكتب 3 كلمات إنجليزية فقط تصف صورة احترافية للموضوع (مثال: bicep, workout, bodybuilding) مفصولة بفواصل.")
 
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": prompt}],
@@ -100,26 +91,27 @@ def generate_post():
         )
         
         full_text = response.choices[0].message.content.strip()
+        lines = [line for line in full_text.split('\n') if line.strip()]
         
-        # استخراج العنوان (أول سطر) والمحتوى (الباقي)
-        lines = full_text.split('\n')
         title = lines[0].replace('**', '').replace('#', '').strip()
-        raw_body = "\n".join(lines[1:]).strip()
+        # الكلمات الدلالية للصورة موجودة في آخر سطر
+        img_keywords = lines[-1].strip().lower().replace(" ", "")
+        # جسم المقال هو كل شيء بين العنوان والكلمات الدلالية
+        raw_body = "\n".join(lines[1:-1]).strip()
         
-        # تنسيق المحتوى لـ HTML
         body = format_content(raw_body)
-        
         slug = f"article-{random.randint(100000, 999999)}.html"
         
-        # حل مشكلة الصور: استخدام رابط احترافي مع قفل عشوائي لضمان التجدد
-        img = f"https://loremflickr.com/1200/800/{img_keyword}/all?lock={random.randint(1,20000)}"
+        # استخدام الكلمات المستخرجة لجلب صورة دقيقة جداً من Unsplash (أكثر احترافية)
+        # أضفت fitness لضمان جودة المحتوى الرياضي
+        img = f"https://loremflickr.com/1200/800/{img_keywords},fitness/all?lock={random.randint(1,50000)}"
         
         full_html = f'''<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdn.tailwindcss.com"></script><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet"><style>body{{font-family:"Cairo", sans-serif;}}</style></head><body class="bg-slate-50"><article class="max-w-5xl mx-auto py-20 px-8 bg-white min-h-screen shadow-2xl rounded-[4rem] my-12 border border-slate-100"><div class="mb-12 text-center leading-relaxed"><span class="text-blue-600 font-black tracking-widest uppercase text-sm">{cat} • MAGAZINE</span><h1 class="text-5xl md:text-7xl font-black mt-6 mb-10 text-slate-900 leading-[1.1] text-right">{title}</h1><div class="w-32 h-2 bg-blue-600 mb-12 mr-0 ml-auto rounded-full"></div></div><img src="{img}" class="w-full h-[600px] object-cover rounded-[4rem] mb-16 shadow-2xl ring-1 ring-slate-200"><div class="content max-w-3xl mx-auto text-right">{body}</div><div class="mt-20 p-16 bg-slate-900 rounded-[4rem] text-center text-white"><h4 class="text-3xl font-black mb-6 italic">TDEE ARABIA 🔥</h4><p class="text-slate-400 mb-10 text-xl font-medium">دليلك اليومي لتغيير حياتك للأفضل</p><a href="{DOMAIN}/blog.html" class="inline-block bg-blue-600 px-12 py-5 rounded-3xl font-black hover:bg-blue-700 transition-all text-xl">العودة للمجلة</a></div></article><footer class="text-center py-20 text-slate-400 font-bold uppercase tracking-widest text-xs">© TDEE ARABIA MAGAZINE - PREMIUM CONTENT</footer></body></html>'''
         
         with open(slug, "w", encoding="utf-8") as f: f.write(full_html)
         update_blog_list(slug, title, img, cat)
         update_sitemap(slug)
-        print(f"🚀 Published: {slug} | Title: {title}")
+        print(f"🚀 Published: {slug} | Title: {title} | Image Tags: {img_keywords}")
         
     except Exception as e: 
         print(f"❌ Error: {e}")
