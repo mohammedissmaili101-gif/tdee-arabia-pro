@@ -10,6 +10,22 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 PEXELS_API_KEY = os.environ.get("PEXELS_API_KEY")
 DOMAIN = "https://tdee-arabia-pro.vercel.app"
 
+FALLBACK_TITLES = {
+    "تغذية": ["أفضل الأطعمة لبناء العضلات", "كيف تحرق الدهون بالتغذية", "البروتين ودوره في جسمك"],
+    "تدريب": ["تمارين الصدر الأساسية", "كيف تبني عضلات الظهر", "تمارين الأرجل للمحترفين"],
+    "عقلية": ["كيف تستمر في التمرين", "التغلب على الكسل الصباحي", "بناء عادات رياضية ثابتة"],
+    "صحة":   ["النوم وتعافي العضلات", "الماء ودوره في الأداء الرياضي", "تجنب إصابات الجيم"],
+    "تعافي": ["أهمية يوم الراحة", "التمدد بعد التمرين", "التعافي السريع بعد التمرين الشاق"],
+}
+
+FALLBACK_KEYWORDS = {
+    "تغذية": "healthy food nutrition",
+    "تدريب": "gym workout training",
+    "عقلية": "fitness motivation mindset",
+    "صحة":   "health wellness sport",
+    "تعافي": "muscle recovery rest",
+}
+
 def get_image_url(keyword):
     try:
         response = requests.get(
@@ -92,22 +108,34 @@ def generate_post():
     categories = ["تغذية", "تدريب", "عقلية", "صحة", "تعافي"]
     cat = random.choice(categories)
 
-    # Groq يولّد العنوان والـ keyword تلقائياً — مواضيع لا نهائية
-    prompt = f"""أنت محرر مجلة رياضية عربية. اقترح موضوع مقال جديد وفريد في تصنيف "{cat}".
+    # الخطوة 1: توليد العنوان مع fallback كامل
+    title = random.choice(FALLBACK_TITLES[cat])
+    img_keyword = FALLBACK_KEYWORDS[cat]
+
+    try:
+        prompt = f"""أنت محرر مجلة رياضية عربية. اقترح موضوع مقال جديد وفريد في تصنيف "{cat}".
 أجب فقط بـ JSON بهذا الشكل بدون أي كلام آخر:
 {{"title": "عنوان المقال بالعربية", "img_keyword": "2-3 english words for pexels image search"}}"""
 
-    r = client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model="llama-3.3-70b-versatile",
-        max_tokens=100
-    )
-    raw = re.sub(r'```json|```', '', r.choices[0].message.content.strip()).strip()
-    data = json.loads(raw)
-    title = data["title"]
-    img_keyword = data["img_keyword"]
+        r = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            model="llama-3.3-70b-versatile",
+            max_tokens=150
+        )
+        raw = r.choices[0].message.content.strip()
+        raw = re.sub(r'```json|```', '', raw).strip()
+        # استخراج JSON حتى لو في كلام زائد
+        match = re.search(r'\{.*?\}', raw, re.DOTALL)
+        if match:
+            data = json.loads(match.group())
+            title = data.get("title", title)
+            img_keyword = data.get("img_keyword", img_keyword)
+    except Exception as e:
+        print(f"⚠️ Topic generation failed, using fallback: {e}")
+
     print(f"📝 [{cat}] {title} | 🖼️ {img_keyword}")
 
+    # الخطوة 2: كتابة المقال
     try:
         response = client.chat.completions.create(
             messages=[{"role": "user", "content": f"اكتب مقال مجلة رياضية احترافي جدا وبأسلوب بشري مشوق عن {title}. المقال يجب أن يحتوي على: مقدمة قوية، عناوين فرعية بين **، قائمة نصائح عملية، وخاتمة ملهمة. تجنب التكرار واستخدم لغة عربية سليمة ولكن قريبة من القارئ."}],
@@ -123,8 +151,9 @@ def generate_post():
         update_blog_list(slug, title, img, cat)
         update_sitemap(slug)
         print(f"🚀 Published: {slug}")
+
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Error writing article: {e}")
 
 if __name__ == "__main__":
     generate_post()
